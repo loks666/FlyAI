@@ -103,6 +103,7 @@ func Sync() {
 				"custom_account": friend.CustomAccount,
 				"pinyin":         friend.Pinyin,
 				"pinyin_all":     friend.PinyinAll,
+				"is_ok":          true,
 			}
 			err = tx.Model(&entity.Friend{}).Where("wxid = ?", friend.Wxid).Updates(pm).Error
 			if err != nil {
