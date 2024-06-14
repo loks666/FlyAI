@@ -103,6 +103,7 @@ func Sync() {
 				"custom_account": friend.CustomAccount,
 				"pinyin":         friend.Pinyin,
 				"pinyin_all":     friend.PinyinAll,
+				"is_ok":          true,
 			}
 			err = tx.Model(&entity.Friend{}).Where("wxid = ?", friend.Wxid).Updates(pm).Error
 			if err != nil {
@@ -133,7 +134,19 @@ func Sync() {
 	}
 
 	// 清理不在列表中的好友
-	err = tx.Model(&entity.Friend{}).Where("wxid NOT IN (?)", nowIds).Update("is_ok", false).Error
+	clearPm := map[string]any{
+		"is_ok":            false,
+		"enable_chat_rank": false,
+		"enable_welcome":   false,
+		"enable_summary":   false,
+		"enable_news":      false,
+		"clear_member":     false,
+		"enable_ai":        false,
+	}
+	err = tx.Model(&entity.Friend{}).Where("wxid NOT IN (?)", nowIds).Updates(clearPm).Error
+	if err != nil {
+		log.Printf("清理好友失败: %s", err.Error())
+	}
 
 	log.Println("同步好友列表完成")
 }
