@@ -44,7 +44,7 @@ func ClearGroupUser() {
 		for k, v := range memberMap {
 			ms = append(ms, fmt.Sprintf("昵称：%s\n最后活跃时间：%s", k, v))
 		}
-		msg := fmt.Sprintf("#清理群成员\n\n很遗憾地通知各位，就在刚刚，有%d名群友引活跃度不够暂时离开了我们，希望还健在的群友引以为戒、保持活跃！\n\n活跃信息: \n%s",
+		msg := fmt.Sprintf("#清理群成员\n\n很遗憾地通知各位，就在刚刚，有%d名群友因活跃度不够暂时离开了我们，希望还健在的群友引以为戒、保持活跃！\n\n详细信息: \n%s",
 			memberCount, strings.Join(ms, "\n"))
 		utils.SendMessage(group.Wxid, "", msg, 0)
 	}
