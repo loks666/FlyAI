@@ -67,6 +67,28 @@ func ChangeUseAiModel(ctx *gin.Context) {
 	ctx.String(http.StatusOK, "操作成功")
 }
 
+// ChangeUseAiAssistant
+// @description: 修改使用的AI助手
+// @param ctx
+func ChangeUseAiAssistant(ctx *gin.Context) {
+	// 此处复用一下结构体
+	var p changeUseAiModelParam
+	if err := ctx.ShouldBind(&p); err != nil {
+		ctx.String(http.StatusBadRequest, "参数错误")
+		return
+	}
+	err := client.MySQL.Model(&entity.Friend{}).
+		Where("wxid = ?", p.WxId).
+		Update("`prompt`", p.Model).Error
+	if err != nil {
+		log.Printf("修改【%s】的AI助手失败：%s", p.WxId, err)
+		ctx.String(http.StatusInternalServerError, "操作失败: %s", err)
+		return
+	}
+
+	ctx.String(http.StatusOK, "操作成功")
+}
+
 // ChangeEnableGroupRankStatus
 // @description: 修改是否开启水群排行榜
 // @param ctx

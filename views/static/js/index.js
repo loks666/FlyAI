@@ -213,3 +213,26 @@ function aiModelChange(event, wxid) {
         window.location.reload();
     })
 }
+
+// AI角色变动
+function aiAssistantChange(event, wxid) {
+  // 取出变动后的值
+  const assistantStr = event.target.value;
+  console.log("AI角色变动: ", wxid, assistantStr)
+  axios({
+    method: 'post',
+    url: '/api/ai/assistant',
+    data: {
+      wxid: wxid,
+      model: assistantStr
+    }
+  }).then(function (response) {
+    console.log(`返回结果: ${JSON.stringify(response)}`);
+    alert(`${response.data}`)
+  }).catch(function (error) {
+    console.log(`错误信息: ${error}`);
+    alert("修改失败")
+  }).finally(function () {
+    window.location.reload();
+  })
+}
