@@ -15,6 +15,7 @@ type FriendItem struct {
 	LastActive     types.DateTime // 最后活跃时间
 	EnableAi       bool           // 是否使用AI
 	AiModel        string         // AI模型
+	Prompt         string         // AI助手或者自定义提示词
 	EnableChatRank bool           // 是否使用聊天排行
 	EnableWelcome  bool           // 是否使用迎新
 	EnableCommand  bool           // 是否启用指令

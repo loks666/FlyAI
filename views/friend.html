@@ -76,6 +76,24 @@
                   </label>
                 </dd>
               </div>
+
+              <div class="flex justify-between gap-x-4 py-3">
+                <dt class="text-gray-500 mt-2">AI角色</dt>
+                <dd class="flex items-start gap-x-2">
+                  <label>
+                    <select class="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-green-600 sm:text-sm sm:leading-6" onchange="aiAssistantChange(event, {{.Wxid}})">
+                      <option value="" {{ if eq .Prompt "" }}selected{{ end }}>默认</option>
+
+                      {{$usePrompt := .Prompt}}
+                      {{ range $.assistant }}
+                      <option value="{{.Id}}" {{ if eq $usePrompt .Id}}selected{{ end }}>
+                        {{.Name}}
+                      </option>
+                      {{ end }}
+                    </select>
+                  </label>
+                </dd>
+              </div>
               {{ end }}
 
               <div class="flex justify-between gap-x-4 py-3">

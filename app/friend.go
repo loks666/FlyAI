@@ -23,6 +23,13 @@ type changeUseAiModelParam struct {
 	Model string `json:"model" binding:"required"` // 模型代码
 }
 
+// autoClearMembers
+// @description: 自动清理群成员
+type autoClearMembers struct {
+	WxId string `json:"wxid" binding:"required"` // 群Id
+	Days int    `json:"days"`                    // 多少天未发言
+}
+
 // ChangeEnableAiStatus
 // @description: 修改是否开启AI
 // @param ctx
@@ -60,6 +67,28 @@ func ChangeUseAiModel(ctx *gin.Context) {
 		Update("`ai_model`", p.Model).Error
 	if err != nil {
 		log.Printf("修改【%s】的AI模型失败：%s", p.WxId, err)
+		ctx.String(http.StatusInternalServerError, "操作失败: %s", err)
+		return
+	}
+
+	ctx.String(http.StatusOK, "操作成功")
+}
+
+// ChangeUseAiAssistant
+// @description: 修改使用的AI助手
+// @param ctx
+func ChangeUseAiAssistant(ctx *gin.Context) {
+	// 此处复用一下结构体
+	var p changeUseAiModelParam
+	if err := ctx.ShouldBind(&p); err != nil {
+		ctx.String(http.StatusBadRequest, "参数错误")
+		return
+	}
+	err := client.MySQL.Model(&entity.Friend{}).
+		Where("wxid = ?", p.WxId).
+		Update("`prompt`", p.Model).Error
+	if err != nil {
+		log.Printf("修改【%s】的AI助手失败：%s", p.WxId, err)
 		ctx.String(http.StatusInternalServerError, "操作失败: %s", err)
 		return
 	}
@@ -199,6 +228,29 @@ func ChangeEnableNewsStatus(ctx *gin.Context) {
 		Update("`enable_news`", gorm.Expr(" !`enable_news`")).Error
 	if err != nil {
 		log.Printf("修改早报启用状态失败：%s", err)
+		ctx.String(http.StatusInternalServerError, "操作失败: %s", err)
+		return
+	}
+
+	ctx.String(http.StatusOK, "操作成功")
+}
+
+// AutoClearMembers
+// @description: 自动清理群成员
+// @param ctx
+func AutoClearMembers(ctx *gin.Context) {
+	var p autoClearMembers
+	if err := ctx.ShouldBindJSON(&p); err != nil {
+		ctx.String(http.StatusBadRequest, "参数错误")
+		return
+	}
+	log.Printf("待修改的Id：%s", p.WxId)
+
+	err := client.MySQL.Model(&entity.Friend{}).
+		Where("wxid = ?", p.WxId).
+		Update("`clear_member`", p.Days).Error
+	if err != nil {
+		log.Printf("修改自动清理群成员阈值失败：%s", err)
 		ctx.String(http.StatusInternalServerError, "操作失败: %s", err)
 		return
 	}
