@@ -21,101 +21,113 @@
   <main class="-mt-32">
     <div class="mx-auto max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
       <div class="rounded-lg bg-white px-5 py-6 shadow sm:px-6 text-2xl">
-        <table class="min-w-full divide-y divide-gray-300">
-          <thead class="bg-gray-50">
-          <tr>
-            <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">群名称
-            </th>
-            <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-              最后活跃时间
-            </th>
-            <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-              是否在通讯录
-            </th>
-            <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-              AI
-            </th>
-            <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-              排行榜
-            </th>
-            <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-              总结
-            </th>
-            <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-              迎新
-            </th>
-            <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-              早报
-            </th>
-            <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-              指令
-            </th>
-            <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-              末位淘汰(天)
-            </th>
-            <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-              操作
-            </th>
-          </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-200 bg-white">
+        <ul role="list" class="grid grid-cols-1 gap-x-6 gap-y-8 lg:grid-cols-3 xl:gap-x-8">
           {{ range .groups }}
-          <tr class="even:bg-gray-50">
-            <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-              <div class="font-medium text-gray-900">{{ .Nickname }}</div>
-              <div class="mt-1 truncate text-gray-500">{{ .Wxid }}</div>
-            </td>
-            <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-              {{ if eq .LastActive.IsNil true }}
-              无数据
-              {{ else }}
-              {{ .LastActive }}
-              {{ end }}
-            </td>
-            <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-              {{ template "flagTag" .IsOk }}
-            </td>
-            <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-              {{ template "ai" . }}
-              <!-- 使用的模型 -->
-              {{ if eq .EnableAi true }}
-              <select id="location" name="location"
-                      class="mt-2 block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-green-600 sm:text-sm sm:leading-6"
-                      onchange="aiModelChange(event, {{.Wxid}})">
-                {{$useModel := .AiModel}}
-                {{ range $.aiModels }}
-                <option value="{{.Model}}" {{ if eq $useModel .Model}}selected{{ end }}>
-                  {{.Name}}({{.Model}})
-                </option>
-                {{ end }}
-              </select>
-              {{ end }}
-            </td>
-            <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-              {{ template "chatRank" . }}
-            </td>
-            <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-              {{ template "summary" . }}
-            </td>
-            <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-              {{ template "welcome" . }}
-            </td>
-            <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-              {{ template "news" . }}
-            </td>
-            <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-              {{ template "command" . }}
-            </td>
-            <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-              {{ .ClearMember }}
-            </td>
-            <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-              <button class="btn btn-link" onclick="getGroupUsers({{.Wxid}}, {{.Nickname}})">成员</button>
-            </td>
-          </tr>
-          {{ end }}
-          </tbody>
-        </table>
+          <li class="overflow-hidden rounded-xl border border-gray-200">
+            <div class="flex items -center gap-x-4 border-b border-gray-900/5 bg-gray-50 p-6">
+              <img src="assets/img/status-{{ if eq .IsOk true }}ok{{else}}fail{{end}}.png" alt="Tuple"
+                   class="h-12 w-12 flex-none rounded-lg bg-white object-cover ring-1 ring-gray-900/10">
+              <div class="text-sm flex-1">
+                <div class="font-medium leading-6 text-gray-900">{{ .Nickname }}</div>
+                <div class="font-medium text-gray-500">{{ .Wxid }}</div>
+                {{ template "flagTag" .IsOk }}
+                <button type="button" class="btn-link float-end text-red-600" onclick="getGroupUsers({{.Wxid}}, {{.Nickname}})">群成员</button>
+              </div>
+            </div>
+
+            <dl class="-my-3 divide-y divide-gray-100 px-6 py-4 text-sm leading-6">
+              <!-- 最后活跃时间 -->
+              <div class="flex justify-between gap-x-4 py-3 items-center">
+                <dt class="text-gray-500">最后活跃时间</dt>
+                <dd class="flex items-start gap-x-2">
+                  {{ if eq .LastActive.IsNil true }}
+                  无活跃数据
+                  {{ else }}
+                  <time datetime="{{ .LastActive }}">{{ .LastActive }}</time>
+                  {{ end }}
+                </dd>
+              </div>
+              <!-- AI -->
+              <div class="flex justify-between gap-x-4 py-3 items-center">
+                <dt class="text-gray-500">AI</dt>
+                <dd class="flex items-start gap-x-2">
+                  <div>
+                    {{ template "ai" . }}
+                  </div>
+                  {{ if eq .EnableAi true }}
+                  <div class="float-end">
+                    <select
+                      class="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-green-600 sm:text-sm sm:leading-6"
+                      onchange="aiAssistantChange(event, {{.Wxid}})">
+                      <option value="" {{ if eq .Prompt
+                      "" }}selected{{ end }}>默认</option>
+
+                      {{$usePrompt := .Prompt}}
+                      {{ range $.assistant }}
+                      <option value="{{.Id}}" {{ if eq $usePrompt .Id}}selected{{ end }}>
+                        {{.Name}}
+                      </option>
+                      {{ end }}
+                    </select>
+                  </div>
+                  {{ end }}
+                </dd>
+              </div>
+              <!-- 水群排行榜 -->
+              <div class="flex justify-between gap-x-4 py-3 items-center">
+                <dt class="text-gray-500">水群排行榜</dt>
+                <dd class="flex items-start gap-x-2">
+                  {{ template "chatRank" . }}
+                </dd>
+              </div>
+              <!-- 群聊总结 -->
+              <div class="flex justify-between gap-x-4 py-3 items-center">
+                <dt class="text-gray-500">群聊总结</dt>
+                <dd class="flex items-start gap-x-2">
+                  {{ template "summary" . }}
+                </dd>
+              </div>
+              <!-- 迎新 -->
+              <div class="flex justify-between gap-x-4 py-3 items-center">
+                <dt class="text-gray-500">迎新</dt>
+                <dd class="flex items-start gap-x-2">
+                  {{ template "welcome" . }}
+                </dd>
+              </div>
+              <!-- 早报 -->
+              <div class="flex justify-between gap-x-4 py-3 items-center">
+                <dt class="text-gray-500">早报</dt>
+                <dd class="flex items-start gap-x-2">
+                  {{ template "news" . }}
+                </dd>
+              </div>
+              <!-- 指令 -->
+              <div class="flex justify-between gap-x-4 py-3 items-center">
+                <dt class="text-gray-500">迎新</dt>
+                <dd class="flex items-start gap-x-2">
+                  {{ template "command" . }}
+                </dd>
+              </div>
+              <!-- 自动清理不活跃成员 -->
+              <div class="flex justify-between gap-x-4 py-3 items-center">
+                <dt class="text-gray-500">末位淘汰</dt>
+                <dd class="flex items-start gap-x-2">
+                  <div class="relative rounded-md shadow-sm">
+                    <label>
+                      <input type="number" id="auto-cm-{{ .Wxid }}" min="0" class="block w-1/2 float-end rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" placeholder="N天不活跃自动移除"
+                             value="{{.ClearMember}}"
+                             onblur="changeClearMember({{.Wxid}}, {{.ClearMember}}, this.value)"
+                      >
+                    </label>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                      <span class="text-gray-500 sm:text-sm" id="price-currency">天</span>
+                    </div>
+                  </div>
+                </dd>
+              </div>
+            </dl>
+            {{ end }}
+        </ul>
       </div>
     </div>
   </main>

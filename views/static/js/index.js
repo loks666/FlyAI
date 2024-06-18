@@ -236,3 +236,33 @@ function aiAssistantChange(event, wxid) {
     window.location.reload();
   })
 }
+
+// 修改清理群成员值
+function changeClearMember(wxid, oldVal, newVal) {
+  oldVal = Number(oldVal)
+  newVal = Number(newVal)
+
+  if (oldVal === newVal) {
+    return
+  }
+  if (newVal < 0) {
+    alert('不活跃天数的值不能小于0')
+  }
+  // 请求接口
+  axios({
+    method: 'put',
+    url: '/api/clearmembers',
+    data: {
+      wxid: wxid,
+      days: Number(newVal)
+    }
+  }).then(function (response) {
+    console.log(`返回结果: ${JSON.stringify(response)}`);
+    alert(`${response.data}`)
+  }).catch(function (error) {
+    console.log(`错误信息: ${error}`);
+    alert("修改失败")
+  }).finally(function () {
+    window.location.reload();
+  })
+}
