@@ -48,6 +48,8 @@ func main() {
 				return "群组列表"
 			case "index":
 				return "首页"
+			case "assistant":
+				return "AI角色"
 			default:
 				return "其他页面"
 			}

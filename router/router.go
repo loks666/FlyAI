@@ -14,9 +14,10 @@ func Init(g *gin.Engine) {
 		ctx.Redirect(302, "/index.html")
 	})
 
-	g.GET("/index.html", app.Index)   // 首页
-	g.GET("/friend.html", app.Friend) // 好友列表
-	g.GET("/group.html", app.Group)   // 群组列表
+	g.GET("/index.html", app.Index)         // 首页
+	g.GET("/friend.html", app.Friend)       // 好友列表
+	g.GET("/group.html", app.Group)         // 群组列表
+	g.GET("/assistant.html", app.Assistant) // AI角色
 
 	g.GET("/404.html", app.PageNotFound) // 群组列表
 
@@ -33,4 +34,6 @@ func Init(g *gin.Engine) {
 	api.GET("/group/users", app.GetGroupUsers)                    // 获取群成员列表
 	api.PUT("/summary/status", app.ChangeEnableSummaryStatus)     // 修改是否开启群聊总结状态
 	api.PUT("/clearmembers", app.AutoClearMembers)                // 自动清理群成员
+
+	api.POST("/assistant", app.SaveAssistant) // 保存AI助手
 }
