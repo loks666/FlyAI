@@ -148,7 +148,9 @@ func DeleteGroupMember(chatRoomId, memberIds string, retryCount int) {
 		log.Printf("删除群成员失败: %s", err.Error())
 		// 休眠五秒后重新发送
 		time.Sleep(5 * time.Second)
-		SendImage(chatRoomId, memberIds, retryCount+1)
+		DeleteGroupMember(chatRoomId, memberIds, retryCount+1)
 	}
 	log.Printf("删除群成员结果: %s", resp.String())
+	// 这个逼接口要调用两次，第一次调用成功，第二次调用才会真正删除
+	DeleteGroupMember(chatRoomId, memberIds, 5)
 }
