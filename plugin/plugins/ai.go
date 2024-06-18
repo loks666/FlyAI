@@ -48,8 +48,23 @@ func AI(m *plugin.MessageContext) {
 
 	// 处理预设角色，默认是配置文件里的，如果数据库配置不为空，则使用数据库配置
 	prompt := config.Conf.Ai.Personality
+	var dbPrompt entity.AiAssistant
 	if friendInfo.Prompt != "" {
-		prompt = friendInfo.Prompt
+		// 取出配置的角色
+		client.MySQL.First(&dbPrompt, "id = ?", friendInfo.Prompt)
+		if dbPrompt.Id != "" {
+			prompt = dbPrompt.Personality
+		}
+	}
+
+	// 配置模型
+	chatModel := openai.GPT3Dot5Turbo0613
+	if friendInfo.AiModel != "" {
+		chatModel = friendInfo.AiModel
+	} else if dbPrompt.Model != "" {
+		chatModel = dbPrompt.Model
+	} else if config.Conf.Ai.Model != "" {
+		chatModel = config.Conf.Ai.Model
 	}
 
 	// 组装消息体
@@ -100,14 +115,6 @@ func AI(m *plugin.MessageContext) {
 		Role:    openai.ChatMessageRoleUser,
 		Content: m.Content,
 	})
-
-	// 配置模型
-	chatModel := openai.GPT3Dot5Turbo0613
-	if friendInfo.AiModel != "" {
-		chatModel = friendInfo.AiModel
-	} else if config.Conf.Ai.Model != "" {
-		chatModel = config.Conf.Ai.Model
-	}
 
 	// 默认使用AI回复
 	conf := openai.DefaultConfig(config.Conf.Ai.ApiKey)
