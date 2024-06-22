@@ -38,7 +38,7 @@ func ClearGroupUser() {
 			memberMap[member.Nickname] = member.LastActive.Format("2006-01-02 15:04:05")
 		}
 		// 调用接口
-		utils.DeleteGroupMember(group.Wxid, strings.Join(deleteIds, ","), 0)
+		utils.DeleteGroupMember(group.Wxid, strings.Join(deleteIds, ","), 0, false)
 		// 发送通知到群里
 		ms := make([]string, 0)
 		for k, v := range memberMap {
