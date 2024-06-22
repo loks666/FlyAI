@@ -126,7 +126,9 @@ func SendEmotion(toId, emotionHash string, retryCount int) {
 // @description: 删除群成员
 // @param chatRoomId 群Id
 // @param memberIds 成员id,用','分隔
-func DeleteGroupMember(chatRoomId, memberIds string, retryCount int) {
+// @param retryCount 重试次数
+// @param isSure 是否确认删除
+func DeleteGroupMember(chatRoomId, memberIds string, retryCount int, isSure bool) {
 	if retryCount > 5 {
 		log.Printf("重试五次失败，停止发送")
 		return
@@ -148,9 +150,11 @@ func DeleteGroupMember(chatRoomId, memberIds string, retryCount int) {
 		log.Printf("删除群成员失败: %s", err.Error())
 		// 休眠五秒后重新发送
 		time.Sleep(5 * time.Second)
-		DeleteGroupMember(chatRoomId, memberIds, retryCount+1)
+		DeleteGroupMember(chatRoomId, memberIds, retryCount+1, isSure)
 	}
-	log.Printf("删除群成员结果: %s", resp.String())
+	log.Printf("[%s]删除群成员结果: %s", chatRoomId, resp.String())
 	// 这个逼接口要调用两次，第一次调用成功，第二次调用才会真正删除
-	DeleteGroupMember(chatRoomId, memberIds, 5)
+	if !isSure {
+		DeleteGroupMember(chatRoomId, memberIds, 5, true)
+	}
 }
