@@ -1,4 +1,7 @@
 system:
+  # 每日新闻接口 Token
+  # 获取地址: https://admin.alapi.cn/api_manager/token_manager
+  alApiToken: xxx
   # 添加新好友或群之后通知给指定的人
   newFriendNotify:
     enable: true

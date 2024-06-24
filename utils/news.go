@@ -2,6 +2,7 @@ package utils
 
 import (
 	"github.com/go-resty/resty/v2"
+	"go-wechat/config"
 	"go-wechat/model"
 	"log"
 )
@@ -33,7 +34,7 @@ func (news) MorningPost() (records []string) {
 	res := resty.New()
 	resp, err := res.R().
 		SetHeader("Content-Type", "application/json;chartset=utf-8").
-		SetQueryParam("token", "cFoMZNNBxT4jQovS").
+		SetQueryParam("token", config.Conf.System.AlApiToken).
 		SetResult(&newsResp).
 		Post("https://v2.alapi.cn/api/zaobao")
 	if err != nil {
