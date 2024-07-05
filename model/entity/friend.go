@@ -22,6 +22,7 @@ type Friend struct {
 	EnableNews     bool      `json:"enableNews" gorm:"type:tinyint(1) default 0 not null"`     // 是否启用新闻
 	ClearMember    int       `json:"clearMember"`                                              // 清理成员配置（多少天未活跃的）
 	IsOk           bool      `json:"isOk" gorm:"type:tinyint(1) default 0 not null"`           // 是否正常
+	UsedTokens     int       `json:"usedTokens"`                                               // 已使用的AI Token数量
 }
 
 func (Friend) TableName() string {

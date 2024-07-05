@@ -142,6 +142,9 @@ func AI(m *plugin.MessageContext) {
 		return
 	}
 
+	// 异步更新一下已使用的AI次数
+	go service.UpdateUsedAiTokens(m.FromUser, resp.Usage.TotalTokens)
+
 	// 保存一下AI 返回的消息，消息 Id 使用传入 Id 的负数
 	var replyMessage entity.Message
 	replyMessage.MsgId = -m.MsgId
