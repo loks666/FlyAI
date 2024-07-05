@@ -24,7 +24,7 @@ func DailyNews() {
 		return
 	}
 
-	newsStr := fmt.Sprintf("#每日早报\n\n又是新的一天了，让我们康康一觉醒来世界又发生了哪些变化~\n\n%s", strings.Join(news, "\n"))
+	newsStr := fmt.Sprintf("#每日早报\n\n又是新的一天了，让我们康康一觉醒来世界又发生了哪些变化~\n\n%s", strings.Join(news, "\n \n"))
 
 	// 循环发送新闻
 	for _, group := range groups {
