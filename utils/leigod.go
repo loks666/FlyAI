@@ -6,16 +6,16 @@ import (
 	"errors"
 	"fmt"
 	"github.com/go-resty/resty/v2"
-	"go-wechat/model"
+	"go-wechat/model/dto"
 	"log"
 )
 
 // LeiGod
 // @description: 雷神加速器相关接口
 type LeiGod interface {
-	Login() error                            // 登录
-	Info() (model.LeiGodUserInfoResp, error) // 获取用户信息
-	Pause() error                            // 暂停加速
+	Login() error                          // 登录
+	Info() (dto.LeiGodUserInfoResp, error) // 获取用户信息
+	Pause() error                          // 暂停加速
 }
 
 type leiGod struct {
@@ -59,7 +59,7 @@ func (l *leiGod) Login() (err error) {
 	}
 	pbs, _ := json.Marshal(param)
 
-	var loginResp model.Response[any]
+	var loginResp dto.Response[any]
 	var resp *resty.Response
 
 	res := resty.New()
@@ -84,7 +84,7 @@ func (l *leiGod) Login() (err error) {
 		return
 	}
 
-	var loginInfo model.LeiGodLoginResp
+	var loginInfo dto.LeiGodLoginResp
 	if err = json.Unmarshal(bs, &loginInfo); err != nil {
 		return
 	}
@@ -100,7 +100,7 @@ func (l *leiGod) Login() (err error) {
 // @description: 获取用户信息
 // @receiver l
 // @return string
-func (l *leiGod) Info() (ui model.LeiGodUserInfoResp, err error) {
+func (l *leiGod) Info() (ui dto.LeiGodUserInfoResp, err error) {
 	// 组装参数
 	param := map[string]any{
 		"account_token": l.token,
@@ -109,7 +109,7 @@ func (l *leiGod) Info() (ui model.LeiGodUserInfoResp, err error) {
 	}
 	pbs, _ := json.Marshal(param)
 
-	var userInfoResp model.Response[model.LeiGodUserInfoResp]
+	var userInfoResp dto.Response[dto.LeiGodUserInfoResp]
 	var resp *resty.Response
 
 	res := resty.New()
@@ -145,7 +145,7 @@ func (l *leiGod) Pause() (err error) {
 	}
 	pbs, _ := json.Marshal(param)
 
-	var pauseResp model.Response[any]
+	var pauseResp dto.Response[any]
 	var resp *resty.Response
 
 	res := resty.New()

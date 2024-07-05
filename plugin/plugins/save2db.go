@@ -1,7 +1,7 @@
 package plugins
 
 import (
-	"go-wechat/entity"
+	"go-wechat/model/entity"
 	"go-wechat/plugin"
 	"go-wechat/service"
 	"time"

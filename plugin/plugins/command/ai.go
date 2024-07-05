@@ -3,7 +3,7 @@ package command
 import (
 	"fmt"
 	"go-wechat/client"
-	"go-wechat/entity"
+	"go-wechat/model/entity"
 	"go-wechat/utils"
 	"log"
 	"strings"

@@ -3,7 +3,7 @@ package plugins
 import (
 	"go-wechat/client"
 	"go-wechat/config"
-	"go-wechat/entity"
+	"go-wechat/model/entity"
 	"go-wechat/plugin"
 	"go-wechat/utils"
 )

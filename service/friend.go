@@ -2,8 +2,9 @@ package service
 
 import (
 	"go-wechat/client"
-	"go-wechat/entity"
-	"go-wechat/vo"
+	"go-wechat/model/entity"
+	"go-wechat/model/vo"
+	"gorm.io/gorm"
 	"log"
 	"strings"
 )
@@ -117,5 +118,18 @@ func updateLastActive(msg entity.Message) {
 		Update("last_active", msg.CreateAt).Error
 	if err != nil {
 		log.Printf("更新群或者好友活跃时间失败, 错误信息: %v", err)
+	}
+}
+
+// UpdateUsedAiTokens
+// @description: 更新已使用的AI次数
+// @param wxId 微信好友或者群聊Id
+// @param tokens 新增的tokens额度
+func UpdateUsedAiTokens(wxId string, tokens int) {
+	err := client.MySQL.Model(&entity.Friend{}).
+		Where("wxid = ?", wxId).
+		Update("`used_tokens`", gorm.Expr(" `used_tokens` + ?", tokens)).Error
+	if err != nil {
+		log.Printf("更新AI使用次数失败, 错误信息: %v", err)
 	}
 }

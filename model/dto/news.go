@@ -1,4 +1,4 @@
-package model
+package dto
 
 // MorningPost
 // @description: 每日早报返回结构体

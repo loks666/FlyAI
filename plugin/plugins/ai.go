@@ -8,7 +8,7 @@ import (
 	"go-wechat/client"
 	"go-wechat/common/current"
 	"go-wechat/config"
-	"go-wechat/entity"
+	"go-wechat/model/entity"
 	"go-wechat/plugin"
 	"go-wechat/service"
 	"go-wechat/types"
@@ -137,10 +137,13 @@ func AI(m *plugin.MessageContext) {
 	}
 
 	// 返回消息为空
-	if resp.Choices[0].Message.Content == "" {
+	if len(resp.Choices) == 0 || resp.Choices[0].Message.Content == "" {
 		utils.SendMessage(m.FromUser, m.GroupUser, "AI似乎抽风了，没有告诉我你需要的回答~", 0)
 		return
 	}
+
+	// 异步更新一下已使用的AI次数
+	go service.UpdateUsedAiTokens(m.FromUser, resp.Usage.TotalTokens)
 
 	// 保存一下AI 返回的消息，消息 Id 使用传入 Id 的负数
 	var replyMessage entity.Message

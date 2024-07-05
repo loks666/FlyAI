@@ -2,7 +2,7 @@ package service
 
 import (
 	"go-wechat/client"
-	"go-wechat/vo"
+	"go-wechat/model/vo"
 )
 
 // GetGroupUsersByGroupId

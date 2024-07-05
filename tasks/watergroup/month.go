@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"go-wechat/client"
 	"go-wechat/config"
-	"go-wechat/entity"
+	"go-wechat/model/entity"
 	"go-wechat/service"
 	"go-wechat/utils"
 	"log"

@@ -1,4 +1,4 @@
-package model
+package dto
 
 // Response
 // @description: 基础返回结构体

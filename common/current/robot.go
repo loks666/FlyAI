@@ -1,14 +1,14 @@
 package current
 
 import (
-	"go-wechat/model"
-	plugin "go-wechat/plugin"
+	"go-wechat/model/dto"
+	"go-wechat/plugin"
 )
 
 // robotInfo
 // @description: 机器人信息
 type robotInfo struct {
-	info           model.RobotUserInfo
+	info           dto.RobotUserInfo
 	MessageHandler plugin.MessageHandler // 启用的插件
 }
 
@@ -18,14 +18,14 @@ var ri robotInfo
 // SetRobotInfo
 // @description: 设置机器人信息
 // @param info
-func SetRobotInfo(info model.RobotUserInfo) {
+func SetRobotInfo(info dto.RobotUserInfo) {
 	ri.info = info
 }
 
 // GetRobotInfo
 // @description: 获取机器人信息
-// @return model.RobotUserInfo
-func GetRobotInfo() model.RobotUserInfo {
+// @return dto.RobotUserInfo
+func GetRobotInfo() dto.RobotUserInfo {
 	return ri.info
 }
 
