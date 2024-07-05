@@ -6,8 +6,8 @@ import (
 	"go-wechat/client"
 	"go-wechat/common/constant"
 	"go-wechat/config"
-	"go-wechat/entity"
-	"go-wechat/model"
+	"go-wechat/model/dto"
+	"go-wechat/model/entity"
 	"go-wechat/utils"
 	"gorm.io/gorm"
 	"log"
@@ -24,7 +24,7 @@ var hc = resty.New()
 // Sync
 // @description: 同步好友列表
 func Sync() {
-	var base model.Response[[]model.FriendItem]
+	var base dto.Response[[]dto.FriendItem]
 
 	resp, err := hc.R().
 		SetHeader("Content-Type", "application/json;chartset=utf-8").
@@ -155,7 +155,7 @@ func Sync() {
 // @description: 同步群成员
 // @param gid
 func syncGroupUsers(tx *gorm.DB, gid string) {
-	var baseResp model.Response[model.GroupUser]
+	var baseResp dto.Response[dto.GroupUser]
 
 	// 组装参数
 	param := map[string]any{
@@ -242,8 +242,8 @@ func syncGroupUsers(tx *gorm.DB, gid string) {
 // @param wxid
 // @return ent
 // @return err
-func getContactProfile(wxid string) (ent model.ContactProfile, err error) {
-	var baseResp model.Response[model.ContactProfile]
+func getContactProfile(wxid string) (ent dto.ContactProfile, err error) {
+	var baseResp dto.Response[dto.ContactProfile]
 
 	// 组装参数
 	param := map[string]any{

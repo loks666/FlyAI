@@ -2,7 +2,7 @@ package service
 
 import (
 	"go-wechat/client"
-	"go-wechat/entity"
+	"go-wechat/model/entity"
 )
 
 // GetAllAiAssistant

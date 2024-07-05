@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"github.com/sashabaranov/go-openai"
 	"go-wechat/config"
+	"go-wechat/model/vo"
 	"go-wechat/service"
 	"go-wechat/utils"
-	"go-wechat/vo"
 	"log"
 	"strings"
 )

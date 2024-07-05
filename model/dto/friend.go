@@ -1,4 +1,4 @@
-package model
+package dto
 
 // FriendItem
 // @description: 好友列表数据

@@ -5,10 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"go-wechat/client"
-	"go-wechat/entity"
-	"go-wechat/model"
+	"go-wechat/model/dto"
+	"go-wechat/model/entity"
+	"go-wechat/model/vo"
 	"go-wechat/utils"
-	"go-wechat/vo"
 	"gorm.io/gorm"
 	"log"
 	"strings"
@@ -156,7 +156,7 @@ func (l leiGod) info() (replyMsg string) {
 	if err = lgu.Login(); err != nil {
 		return "登录失败: " + err.Error()
 	}
-	var ui model.LeiGodUserInfoResp
+	var ui dto.LeiGodUserInfoResp
 	if ui, err = lgu.Info(); err != nil {
 		return "获取详情失败: " + err.Error()
 	}

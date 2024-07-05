@@ -8,7 +8,7 @@ import (
 	"go-wechat/client"
 	"go-wechat/common/current"
 	"go-wechat/config"
-	"go-wechat/entity"
+	"go-wechat/model/entity"
 	"go-wechat/plugin"
 	"go-wechat/service"
 	"go-wechat/types"

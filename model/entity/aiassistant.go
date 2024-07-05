@@ -14,7 +14,7 @@ type AiAssistant struct {
 	CreatedAt   types.DateTime `json:"createdAt"`
 	Name        string         `json:"name" gorm:"type:varchar(10);not null;comment:'名称'"`
 	Personality string         `json:"personality" gorm:"type:varchar(999);not null;comment:'人设'"`
-	Model       string         `json:"model" gorm:"type:varchar(50);not null;comment:'使用的模型'"`
+	Model       string         `json:"dto" gorm:"type:varchar(50);not null;comment:'使用的模型'"`
 	Enable      bool           `json:"enable" gorm:"type:tinyint(1);not null;default:1;comment:'是否启用'"`
 }
 

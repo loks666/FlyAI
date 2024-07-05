@@ -4,7 +4,7 @@ import (
 	"github.com/go-resty/resty/v2"
 	"go-wechat/common/current"
 	"go-wechat/config"
-	"go-wechat/model"
+	"go-wechat/model/dto"
 	"log"
 )
 
@@ -12,7 +12,7 @@ import (
 // @description: 初始化微信机器人信息
 func InitWechatRobotInfo() {
 	// 获取数据
-	var base model.Response[model.RobotUserInfo]
+	var base dto.Response[dto.RobotUserInfo]
 	_, err := resty.New().R().
 		SetHeader("Content-Type", "application/json;chartset=utf-8").
 		SetResult(&base).

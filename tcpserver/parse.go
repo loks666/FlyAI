@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"go-wechat/common/current"
 	"go-wechat/config"
-	"go-wechat/model"
+	"go-wechat/model/dto"
 	"go-wechat/types"
 	"go-wechat/utils"
 	"log"
@@ -16,7 +16,7 @@ import (
 // @description: 解析消息
 // @param msg
 func parse(remoteAddr net.Addr, msg []byte) {
-	var m model.Message
+	var m dto.Message
 	if err := json.Unmarshal(msg, &m); err != nil {
 		log.Printf("[%s]消息解析失败： %v", remoteAddr, err)
 		log.Printf("[%s]消息内容： %d -> %v", remoteAddr, len(msg), string(msg))

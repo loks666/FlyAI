@@ -3,7 +3,7 @@ package utils
 import (
 	"github.com/go-resty/resty/v2"
 	"go-wechat/config"
-	"go-wechat/model"
+	"go-wechat/model/dto"
 	"log"
 )
 
@@ -29,7 +29,7 @@ func NewsUtil() News {
 // @receiver news
 // @return records
 func (news) MorningPost() (records []string) {
-	var newsResp model.MorningPost
+	var newsResp dto.MorningPost
 
 	res := resty.New()
 	resp, err := res.R().

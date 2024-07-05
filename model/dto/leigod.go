@@ -1,4 +1,4 @@
-package model
+package dto
 
 // LeiGodLoginResp
 // @description: 雷神登录返回

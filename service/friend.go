@@ -2,8 +2,8 @@ package service
 
 import (
 	"go-wechat/client"
-	"go-wechat/entity"
-	"go-wechat/vo"
+	"go-wechat/model/entity"
+	"go-wechat/model/vo"
 	"log"
 	"strings"
 )

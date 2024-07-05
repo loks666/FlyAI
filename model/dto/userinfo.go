@@ -1,4 +1,4 @@
-package model
+package dto
 
 // RobotUserInfo
 // @description: 机器人用户信息

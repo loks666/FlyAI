@@ -1,21 +1,21 @@
 package plugin
 
 import (
-	"go-wechat/model"
+	"go-wechat/model/dto"
 )
 
 // MessageHandler 消息处理函数
-type MessageHandler func(msg *model.Message)
+type MessageHandler func(msg *dto.Message)
 
 // MessageDispatcher 消息分发处理接口
 // 跟 DispatchMessage 结合封装成 MessageHandler
 type MessageDispatcher interface {
-	Dispatch(msg *model.Message)
+	Dispatch(msg *dto.Message)
 }
 
 // DispatchMessage 跟 MessageDispatcher 结合封装成 MessageHandler
-func DispatchMessage(dispatcher MessageDispatcher) func(msg *model.Message) {
-	return func(msg *model.Message) { dispatcher.Dispatch(msg) }
+func DispatchMessage(dispatcher MessageDispatcher) func(msg *dto.Message) {
+	return func(msg *dto.Message) { dispatcher.Dispatch(msg) }
 }
 
 // MessageDispatcher impl
@@ -30,7 +30,7 @@ type MessageContext struct {
 	index           int
 	abortIndex      int
 	messageHandlers MessageContextHandlerGroup
-	*model.Message
+	*dto.Message
 }
 
 // Next 主动调用下一个消息处理函数(或开始调用)
@@ -65,11 +65,11 @@ func (c *MessageContext) AbortHandler() MessageContextHandler {
 }
 
 // MatchFunc 消息匹配函数,返回为true则表示匹配
-type MatchFunc func(*model.Message) bool
+type MatchFunc func(*dto.Message) bool
 
 // MatchFuncList 将多个MatchFunc封装成一个MatchFunc
 func MatchFuncList(matchFuncs ...MatchFunc) MatchFunc {
-	return func(message *model.Message) bool {
+	return func(message *dto.Message) bool {
 		for _, matchFunc := range matchFuncs {
 			if !matchFunc(message) {
 				return false
@@ -89,7 +89,7 @@ type matchNodes []*matchNode
 // MessageMatchDispatcher impl MessageDispatcher interface
 //
 //	dispatcher := NewMessageMatchDispatcher()
-//	dispatcher.OnText(func(msg *model.Message){
+//	dispatcher.OnText(func(msg *dto.Message){
 //			msg.ReplyText("hello")
 //	})
 //	bot := DefaultBot()
@@ -113,7 +113,7 @@ func (m *MessageMatchDispatcher) SetAsync(async bool) {
 // 遍历 MessageMatchDispatcher 所有的消息处理函数
 // 获取所有匹配上的函数
 // 执行处理的消息处理方法
-func (m *MessageMatchDispatcher) Dispatch(msg *model.Message) {
+func (m *MessageMatchDispatcher) Dispatch(msg *dto.Message) {
 	var group MessageContextHandlerGroup
 	for _, node := range m.matchNodes {
 		if node.matchFunc(msg) {

@@ -3,7 +3,7 @@ package cleargroupuser
 import (
 	"fmt"
 	"go-wechat/client"
-	"go-wechat/entity"
+	"go-wechat/model/entity"
 	"go-wechat/service"
 	"go-wechat/utils"
 	"log"
