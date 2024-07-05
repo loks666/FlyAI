@@ -32,6 +32,39 @@ type systemMsgDataXml struct {
 	Type   string `xml:"type,attr"`
 }
 
+// appMsgDataXml
+// @description: 微信app消息的xml结构
+type appMsgDataXml struct {
+	XMLName xml.Name `xml:"msg"`
+	Text    string   `xml:",chardata"`
+	AppMsg  struct {
+		Text      string `xml:",chardata"`
+		Appid     string `xml:"appid,attr"`
+		SdkVer    string `xml:"sdkver,attr"`
+		Title     string `xml:"title"`
+		Des       string `xml:"des"`
+		Action    string `xml:"action"`
+		Type      string `xml:"type"`
+		ShowType  string `xml:"showtype"`
+		Content   string `xml:"content"`
+		URL       string `xml:"url"`
+		ThumbUrl  string `xml:"thumburl"`
+		LowUrl    string `xml:"lowurl"`
+		AppAttach struct {
+			Text     string `xml:",chardata"`
+			TotalLen string `xml:"totallen"`
+			AttachId string `xml:"attachid"`
+			FileExt  string `xml:"fileext"`
+		} `xml:"appattach"`
+		ExtInfo string `xml:"extinfo"`
+	} `xml:"appmsg"`
+	AppInfo struct {
+		Text    string `xml:",chardata"`
+		Version string `xml:"version"`
+		AppName string `xml:"appname"`
+	} `xml:"appinfo"`
+}
+
 // atMsgDataXml
 // @description: 微信@消息的xml结构
 type atMsgDataXml struct {
@@ -162,4 +195,21 @@ func (m Message) CleanContentStartWith(prefix string) bool {
 	content = strings.TrimLeft(content, " ")
 
 	return strings.HasPrefix(content, prefix)
+}
+
+// IsInvitationJoinGroup
+// @description: 是否是邀请入群消息
+// @receiver m
+// @return bool 是否是邀请入群消息
+// @return string 邀请入群消息内容
+func (m Message) IsInvitationJoinGroup() (flag bool, str string) {
+	if m.Type == types.MsgTypeApp {
+		// 解析xml
+		var md appMsgDataXml
+		if err := xml.Unmarshal([]byte(m.Content), &md); err != nil {
+			return
+		}
+		return md.AppMsg.Type == "5" && strings.Contains(md.AppMsg.Content, "邀请你加入群聊"), md.AppMsg.Des
+	}
+	return
 }
