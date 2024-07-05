@@ -137,7 +137,7 @@ func AI(m *plugin.MessageContext) {
 	}
 
 	// 返回消息为空
-	if resp.Choices[0].Message.Content == "" {
+	if len(resp.Choices) == 0 || resp.Choices[0].Message.Content == "" {
 		utils.SendMessage(m.FromUser, m.GroupUser, "AI似乎抽风了，没有告诉我你需要的回答~", 0)
 		return
 	}
