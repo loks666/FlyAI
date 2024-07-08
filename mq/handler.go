@@ -3,10 +3,8 @@ package mq
 import (
 	"encoding/json"
 	"go-wechat/common/current"
-	"go-wechat/config"
 	"go-wechat/model/dto"
 	"go-wechat/types"
-	"go-wechat/utils"
 	"log"
 	"strings"
 )
@@ -38,16 +36,6 @@ func parse(msg []byte) {
 		m.Content = strings.Join(strings.Split(m.Content, "\n")[1:], "\n")
 	}
 	log.Printf("收到新微信消息\n消息来源: %s\n群成员: %s\n消息类型: %v\n消息内容: %s", m.FromUser, m.GroupUser, m.Type, m.Content)
-
-	// 如果是邀请进群，推送到配置的用户
-	if flag, dec := m.IsInvitationJoinGroup(); flag {
-		for _, user := range config.Conf.System.NewFriendNotify.ToUser {
-			if user != "" {
-				// 发送一条新消息
-				utils.SendMessage(user, "", dec, 0)
-			}
-		}
-	}
 
 	// 插件不为空，开始执行
 	if p := current.GetRobotMessageHandler(); p != nil {

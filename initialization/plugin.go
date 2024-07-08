@@ -23,6 +23,12 @@ func Plugin() {
 		return true
 	}, plugins.SaveToDb)
 
+	// 通知邀请入群消息到配置用户
+	dispatcher.RegisterHandler(func(m *dto.Message) bool {
+		flag, _ := m.IsInvitationJoinGroup()
+		return flag
+	}, plugins.NotifyInvitationJoinGroup)
+
 	// 私聊指令消息
 	dispatcher.RegisterHandler(func(m *dto.Message) bool {
 		// 私聊消息 或 群聊艾特机器人并且以/开头的消息

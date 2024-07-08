@@ -209,7 +209,9 @@ func (m Message) IsInvitationJoinGroup() (flag bool, str string) {
 		if err := xml.Unmarshal([]byte(m.Content), &md); err != nil {
 			return
 		}
-		return md.AppMsg.Type == "5" && strings.Contains(md.AppMsg.Content, "邀请你加入群聊"), md.AppMsg.Des
+		flag = md.AppMsg.Type == "5" && md.AppMsg.Title == "邀请你加入群聊"
+		str = strings.ReplaceAll(md.AppMsg.Des, "，进入可查看详情。", "")
+		return
 	}
 	return
 }
