@@ -37,6 +37,16 @@ func GetAllFriend() (friends, groups []vo.FriendItem, err error) {
 	return
 }
 
+// GetFriendInfoById
+// @description: 通过wxId获取好友信息
+// @param wxId
+// @return ent
+// @return err
+func GetFriendInfoById(wxId string) (ent entity.Friend, err error) {
+	err = client.MySQL.Where("wxid = ?", wxId).First(&ent).Error
+	return
+}
+
 // GetAllEnableAI
 // @description: 取出所有启用了AI的好友或群组
 // @return []entity.Friend
