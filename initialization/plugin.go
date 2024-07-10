@@ -6,6 +6,7 @@ import (
 	plugin "go-wechat/plugin"
 	"go-wechat/plugin/plugins"
 	"go-wechat/service"
+	"go-wechat/types"
 )
 
 // Plugin
@@ -28,6 +29,10 @@ func Plugin() {
 		flag, _ := m.IsInvitationJoinGroup()
 		return flag
 	}, plugins.NotifyInvitationJoinGroup)
+	// 被移除群聊通知到配置用户
+	dispatcher.RegisterHandler(func(m *dto.Message) bool {
+		return m.Type == types.MsgTypeSys
+	}, plugins.NotifyRemoveFromChatroom)
 
 	// 私聊指令消息
 	dispatcher.RegisterHandler(func(m *dto.Message) bool {
