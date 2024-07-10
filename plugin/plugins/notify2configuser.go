@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go-wechat/config"
 	"go-wechat/plugin"
+	"go-wechat/service"
 	"go-wechat/utils"
 	"strings"
 )
@@ -31,12 +32,20 @@ func NotifyInvitationJoinGroup(m *plugin.MessageContext) {
 // @description: 被移除群聊通知到配置用户
 // @param m
 func NotifyRemoveFromChatroom(m *plugin.MessageContext) {
+	// 如果是被移出群聊，推送到配置的用户
 	if strings.HasPrefix(m.Content, "你被\"") && strings.HasSuffix(m.Content, "\"移出群聊") {
-		// 如果是被移出群聊，推送到配置的用户
+		// 取出群名称
+		groupName, err := service.GetFriendInfoById(m.FromUser)
+		if err != nil {
+			return
+		}
+		// 组装消息
+		msg := fmt.Sprintf("#移除群聊提醒\n\n群Id: %s\n群名称: %s\n事件: %s", m.FromUser, groupName, m.Content)
+
 		for _, user := range config.Conf.System.NewFriendNotify.ToUser {
 			if user != "" {
 				// 发送一条新消息
-				utils.SendMessage(user, "", m.Content, 0)
+				utils.SendMessage(user, "", msg, 0)
 			}
 		}
 	}
