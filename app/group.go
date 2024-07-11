@@ -25,6 +25,19 @@ func GetGroupUsers(ctx *gin.Context) {
 		ctx.String(http.StatusInternalServerError, "查询失败: %s", err.Error())
 		return
 	}
+
+	result := map[string]any{
+		"records": records,
+	}
+	// 循环数据，统计健在成员
+	var isOkCount int
+	for _, record := range records {
+		if record.IsMember {
+			isOkCount++
+		}
+	}
+	result["isOkCount"] = isOkCount
+
 	// 暂时先就这样写着，跑通了再改
-	ctx.JSON(http.StatusOK, records)
+	ctx.JSON(http.StatusOK, result)
 }
