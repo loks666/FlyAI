@@ -79,7 +79,7 @@ func main() {
 	})
 	// 初始化路由
 	router.Init(app)
-	if err := app.Run(":18080"); err != nil {
+	if err := app.Run(":8080"); err != nil {
 		log.Panicf("服务启动失败：%v", err)
 	}
 }
