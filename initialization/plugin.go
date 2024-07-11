@@ -33,6 +33,10 @@ func Plugin() {
 	dispatcher.RegisterHandler(func(m *dto.Message) bool {
 		return m.Type == types.MsgTypeSys
 	}, plugins.NotifyRemoveFromChatroom)
+	// 响应好友添加成功消息
+	dispatcher.RegisterHandler(func(m *dto.Message) bool {
+		return m.Type == types.MsgTypeSys
+	}, plugins.ReplyNewFriend)
 
 	// 私聊指令消息
 	dispatcher.RegisterHandler(func(m *dto.Message) bool {
