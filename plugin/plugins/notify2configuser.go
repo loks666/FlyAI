@@ -35,12 +35,12 @@ func NotifyRemoveFromChatroom(m *plugin.MessageContext) {
 	// 如果是被移出群聊，推送到配置的用户
 	if strings.HasPrefix(m.Content, "你被\"") && strings.HasSuffix(m.Content, "\"移出群聊") {
 		// 取出群名称
-		groupName, err := service.GetFriendInfoById(m.FromUser)
+		groupInfo, err := service.GetFriendInfoById(m.FromUser)
 		if err != nil {
 			return
 		}
 		// 组装消息
-		msg := fmt.Sprintf("#移除群聊提醒\n\n群Id: %s\n群名称: %s\n事件: %s", m.FromUser, groupName, m.Content)
+		msg := fmt.Sprintf("#移除群聊提醒\n\n群Id: %s\n群名称: %s\n事件: %s", m.FromUser, groupInfo.Nickname, m.Content)
 
 		for _, user := range config.Conf.System.NewFriendNotify.ToUser {
 			if user != "" {
