@@ -20,7 +20,7 @@ type changeStatusParam struct {
 // @description: 修改使用的AI模型用的参数集
 type changeUseAiModelParam struct {
 	WxId  string `json:"wxid" binding:"required"` // 群Id或微信Id
-	Model string `json:"dto"`                     // 模型代码
+	Model string `json:"model"`                   // 模型代码
 }
 
 // autoClearMembers
