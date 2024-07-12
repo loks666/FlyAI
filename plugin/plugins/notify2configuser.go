@@ -34,6 +34,9 @@ func NotifyInvitationJoinGroup(m *plugin.MessageContext) {
 func NotifyRemoveFromChatroom(m *plugin.MessageContext) {
 	// 如果是被移出群聊，推送到配置的用户
 	if strings.HasPrefix(m.Content, "你被\"") && strings.HasSuffix(m.Content, "\"移出群聊") {
+		// 调用一下退出群聊接口，防止被移出后还能从好友列表接口拉到相关信息
+		utils.QuitChatroom(m.FromUser, 0)
+
 		// 取出群名称
 		groupInfo, err := service.GetFriendInfoById(m.FromUser)
 		if err != nil {
