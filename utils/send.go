@@ -158,3 +158,33 @@ func DeleteGroupMember(chatRoomId, memberIds string, retryCount int, isSure bool
 		DeleteGroupMember(chatRoomId, memberIds, 5, true)
 	}
 }
+
+// QuitChatroom
+// @description: 退出群聊
+// @param chatRoomId string 群Id
+// @param retryCount int 重试次数
+func QuitChatroom(chatRoomId string, retryCount int) {
+	if retryCount > 5 {
+		log.Printf("重试五次失败，停止发送")
+		return
+	}
+
+	// 组装参数
+	param := map[string]any{
+		"chatRoomId": chatRoomId, // 群Id
+	}
+	pbs, _ := json.Marshal(param)
+
+	res := resty.New()
+	resp, err := res.R().
+		SetHeader("Content-Type", "application/json;chartset=utf-8").
+		SetBody(string(pbs)).
+		Post(config.Conf.Wechat.GetURL("/api/quitChatRoom"))
+	if err != nil {
+		log.Printf("退群失败: %s", err.Error())
+		// 休眠五秒后重新发送
+		time.Sleep(5 * time.Second)
+		QuitChatroom(chatRoomId, retryCount+1)
+	}
+	log.Printf("退群结果: %s", resp.String())
+}
