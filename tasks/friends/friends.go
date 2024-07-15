@@ -136,13 +136,7 @@ func Sync() {
 
 	// 清理不在列表中的好友
 	clearPm := map[string]any{
-		"is_ok":            false,
-		"enable_chat_rank": false,
-		"enable_welcome":   false,
-		"enable_summary":   false,
-		"enable_news":      false,
-		"clear_member":     false,
-		"enable_ai":        false,
+		"is_ok": false,
 	}
 	err = tx.Model(&entity.Friend{}).Where("wxid NOT IN (?)", nowIds).Updates(clearPm).Error
 	if err != nil {

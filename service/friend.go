@@ -51,7 +51,7 @@ func GetFriendInfoById(wxId string) (ent entity.Friend, err error) {
 // @description: 取出所有启用了AI的好友或群组
 // @return []entity.Friend
 func GetAllEnableAI() (records []entity.Friend, err error) {
-	err = client.MySQL.Where("enable_ai = ?", 1).Find(&records).Error
+	err = client.MySQL.Where("enable_ai = ?", 1).Where("is_ok IS TRUE").Find(&records).Error
 	return
 }
 
