@@ -5,6 +5,7 @@ import (
 	"go-wechat/config"
 	"go-wechat/tasks/cleargroupuser"
 	"go-wechat/tasks/friends"
+	"go-wechat/tasks/hottop"
 	"go-wechat/tasks/news"
 	"go-wechat/tasks/summary"
 	"go-wechat/tasks/watergroup"
@@ -55,6 +56,11 @@ func InitTasks() {
 	// 每日早报
 	if config.Conf.Task.News.Enable {
 		_, _ = s.Cron(config.Conf.Task.News.Cron).Do(news.DailyNews)
+	}
+
+	// 热榜
+	if config.Conf.Task.HotTop.Enable {
+		_, _ = s.Cron(config.Conf.Task.HotTop.Cron).Do(hottop.HotTop)
 	}
 
 	// 每天0点检查一次处理清理群成员

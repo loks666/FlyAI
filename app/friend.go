@@ -235,6 +235,29 @@ func ChangeEnableNewsStatus(ctx *gin.Context) {
 	ctx.String(http.StatusOK, "操作成功")
 }
 
+// ChangeEnableHotTopStatus
+// @description: 修改是否开启热搜
+// @param ctx
+func ChangeEnableHotTopStatus(ctx *gin.Context) {
+	var p changeStatusParam
+	if err := ctx.ShouldBindJSON(&p); err != nil {
+		ctx.String(http.StatusBadRequest, "参数错误")
+		return
+	}
+	log.Printf("待修改的Id：%s", p.WxId)
+
+	err := client.MySQL.Model(&entity.Friend{}).
+		Where("wxid = ?", p.WxId).
+		Update("`enable_hot_top`", gorm.Expr(" !`enable_hot_top`")).Error
+	if err != nil {
+		log.Printf("修改热榜启用状态失败：%s", err)
+		ctx.String(http.StatusInternalServerError, "操作失败: %s", err)
+		return
+	}
+
+	ctx.String(http.StatusOK, "操作成功")
+}
+
 // AutoClearMembers
 // @description: 自动清理群成员
 // @param ctx
