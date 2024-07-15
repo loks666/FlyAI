@@ -88,6 +88,15 @@ func GetAllEnableNews() (records []entity.Friend, err error) {
 	return
 }
 
+// GetAllEnableHotTop
+// @description: 获取所有启用了热搜排行榜的好友或群组
+// @return records
+// @return err
+func GetAllEnableHotTop() (records []entity.Friend, err error) {
+	err = client.MySQL.Where("enable_hot_top = ?", 1).Where("is_ok IS TRUE").Find(&records).Error
+	return
+}
+
 // GetAllEnableClearGroup
 // @description: 获取所有需要清理成员的群组
 // @return records

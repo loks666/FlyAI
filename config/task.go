@@ -8,6 +8,7 @@ type task struct {
 	SyncFriends  syncFriends `json:"syncFriends" yaml:"syncFriends"`   // 同步好友
 	WaterGroup   waterGroup  `json:"waterGroup" yaml:"waterGroup"`     // 水群排行榜
 	GroupSummary syncFriends `json:"groupSummary" yaml:"groupSummary"` // 群聊总结
+	HotTop       syncFriends `json:"hotTop" yaml:"hotTop"`             // 热搜排行榜
 }
 
 // syncFriends

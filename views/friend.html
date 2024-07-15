@@ -104,6 +104,13 @@
               </div>
 
               <div class="flex justify-between gap-x-4 py-3">
+                <dt class="text-gray-500">热榜</dt>
+                <dd class="flex items-start gap-x-2">
+                  {{ template "hotTop" . }}
+                </dd>
+              </div>
+
+              <div class="flex justify-between gap-x-4 py-3">
                 <dt class="text-gray-500">指令</dt>
                 <dd class="flex items-start gap-x-2">
                   {{ template "command" . }}

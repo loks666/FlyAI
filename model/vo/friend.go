@@ -21,6 +21,7 @@ type FriendItem struct {
 	EnableCommand  bool           // 是否启用指令
 	EnableSummary  bool           // 是否启用总结
 	EnableNews     bool           // 是否启用新闻
+	EnableHotTop   bool           // 是否启用热搜
 	ClearMember    int            // 清理成员配置（多少天未活跃的）
 	IsOk           bool           // 是否还在通讯库(群聊是要还在群里也算)
 }

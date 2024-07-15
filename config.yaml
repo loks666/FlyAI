@@ -23,7 +23,7 @@ system:
 # 微信HOOK配置
 wechat:
   # 微信HOOK接口地址
-  host: 10.0.0.73:19088
+  host: 10.0.0.79:19088
   # 微信容器映射出来的vnc页面地址，没有就不填
   #  vncUrl: http://192.168.1.175:19087/vnc_lite.html
   # 是否在启动的时候自动设置hook服务的回调
@@ -44,11 +44,15 @@ mysql:
   db: wechat
   schema: public # postgres 专用
 
+# 定时任务
 task:
-  enable: false
+  enable: true
   news:
-    enable: true
+    enable: false
     cron: '14 11 * * *' # 每天0:30
+  hotTop:
+    enable: true
+    cron: '0 */1 * * *' # 每小时一次
   syncFriends:
     enable: false
     cron: '*/5 * * * *' # 五分钟一次

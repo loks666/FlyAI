@@ -29,6 +29,7 @@ func Init(g *gin.Engine) {
 	api.PUT("/welcome/status", app.ChangeEnableWelcomeStatus)     // 修改是否开启迎新状态
 	api.PUT("/command/status", app.ChangeEnableCommandStatus)     // 修改是否开启指令状态
 	api.PUT("/news/status", app.ChangeEnableNewsStatus)           // 修改是否开启早报状态
+	api.PUT("/hot-top/status", app.ChangeEnableHotTopStatus)      // 修改是否开启热榜状态
 	api.PUT("/grouprank/status", app.ChangeEnableGroupRankStatus) // 修改是否开启水群排行榜状态
 	api.PUT("/grouprank/skip", app.ChangeSkipGroupRankStatus)     // 修改是否跳过水群排行榜状态
 	api.GET("/group/users", app.GetGroupUsers)                    // 获取群成员列表
