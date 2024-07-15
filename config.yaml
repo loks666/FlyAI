@@ -19,6 +19,8 @@ system:
     welcome: true
     # 每日早报
     news: true
+    # 热榜
+    hotTop: true
 
 # 微信HOOK配置
 wechat:

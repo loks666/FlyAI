@@ -20,4 +20,5 @@ type defaultRule struct {
 	Summary  bool `json:"summary" yaml:"summary"`   // 是否启用聊天总结
 	Welcome  bool `json:"welcome" yaml:"welcome"`   // 是否启用欢迎新成员
 	News     bool `json:"news" yaml:"news"`         // 是否启用每日早报
+	HotTop   bool `json:"hotTop" yaml:"hotTop"`     // 是否启用热门话题
 }
