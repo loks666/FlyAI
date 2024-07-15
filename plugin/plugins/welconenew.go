@@ -14,7 +14,7 @@ import (
 func WelcomeNew(m *plugin.MessageContext) {
 	// 判断是否开启迎新
 	var count int64
-	client.MySQL.Model(&entity.Friend{}).Where("enable_welcome IS TRUE").Where("wxid = ?", m.FromUser).Count(&count)
+	client.MySQL.Model(&entity.Friend{}).Where("enable_welcome IS TRUE").Where("is_ok IS TRUE").Where("is_ok IS TRUE").Where("wxid = ?", m.FromUser).Count(&count)
 	if count < 1 {
 		return
 	}
