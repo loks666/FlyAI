@@ -107,6 +107,27 @@ func Assistant(ctx *gin.Context) {
 	ctx.HTML(http.StatusOK, "assistant.html", result)
 }
 
+// ManageWithGroupAdmin
+// @description: 群组管理（管理员可用）
+// @param ctx
+func ManageWithGroupAdmin(ctx *gin.Context) {
+	// 取出id
+	id := ctx.Query("id")
+	if id == "" {
+		ctx.HTML(http.StatusOK, "404.html", nil)
+		return
+	}
+
+	var result = gin.H{
+		"msg": "success",
+	}
+	result["info"], _ = service.GetFriendInfoById(id)
+	result["aiModels"] = config.Conf.Ai.Models
+	result["assistant"], _ = service.GetAllAiAssistant()
+	// 渲染页面
+	ctx.HTML(http.StatusOK, "manager-one.html", result)
+}
+
 // PageNotFound
 // @description: 404页面
 // @param ctx

@@ -60,6 +60,10 @@ func main() {
 			}
 			return "否"
 		},
+		"checkIsGroup": func(str string) bool {
+			// 如果id包含@chatroom就是群组
+			return strings.HasSuffix(str, "@chatroom")
+		},
 	})
 
 	app.LoadHTMLGlob("views/*.html")

@@ -14,10 +14,11 @@ func Init(g *gin.Engine) {
 		ctx.Redirect(302, "/index.html")
 	})
 
-	g.GET("/index.html", app.Index)         // 首页
-	g.GET("/friend.html", app.Friend)       // 好友列表
-	g.GET("/group.html", app.Group)         // 群组列表
-	g.GET("/assistant.html", app.Assistant) // AI角色
+	g.GET("/index.html", app.Index)                  // 首页
+	g.GET("/friend.html", app.Friend)                // 好友列表
+	g.GET("/group.html", app.Group)                  // 群组列表
+	g.GET("/assistant.html", app.Assistant)          // AI角色
+	g.GET("/manager.html", app.ManageWithGroupAdmin) // 自己管理配置
 
 	g.GET("/404.html", app.PageNotFound) // 群组列表
 

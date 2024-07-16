@@ -5,6 +5,7 @@ import (
 	"github.com/go-resty/resty/v2"
 	"go-wechat/client"
 	"go-wechat/common/constant"
+	"go-wechat/common/types"
 	"go-wechat/config"
 	"go-wechat/model/dto"
 	"go-wechat/model/entity"
@@ -77,7 +78,7 @@ func Sync() {
 				EnableNews:     config.Conf.System.DefaultRule.News,
 				EnableHotTop:   config.Conf.System.DefaultRule.HotTop,
 				ClearMember:    0,
-				LastActive:     time.Now().Local(),
+				LastActive:     types.DateTime(time.Now().Local()),
 			}).Error
 			if err != nil {
 				log.Printf("新增好友失败: %s", err.Error())
@@ -98,6 +99,14 @@ func Sync() {
 					utils.SendEmotion(friend.Wxid, conf.Path, 0)
 				}
 			}
+			// 发送配置网页
+			if config.Conf.System.Domain != "" {
+				title := "欢迎使用微信机器人"
+				desc := "点我可以配置功能喔，提示非微信官方网页，点击继续访问即可"
+				url := config.Conf.System.Domain + "/manager.html?id=" + friend.Wxid
+				utils.SendPublicMsg(friend.Wxid, title, desc, url, 0)
+			}
+
 		} else {
 			pm := map[string]any{
 				"nickname":       friend.Nickname,
