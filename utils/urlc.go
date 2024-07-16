@@ -26,12 +26,12 @@ func GenShortUrl(url string) (shortUrl string) {
 		SetAuthScheme("Token").
 		SetAuthToken(config.Conf.System.UrlcApiToken).
 		SetBody(string(pbs)).
-		SetResult(&respData).
 		Post("https://www.urlc.cn/api/url/add")
 	if err != nil {
 		log.Printf("短链接获取失败: %s", err.Error())
 		return
 	}
-	log.Printf("短链接获取结果: %s", unicodeToText(resp.String()))
+	log.Printf("短链接获取结果: %s", resp.String())
+	_ = json.Unmarshal(resp.Body(), &respData)
 	return respData.Short
 }
