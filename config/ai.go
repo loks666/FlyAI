@@ -15,6 +15,7 @@ type ai struct {
 // aiModel
 // @description: AI模型
 type aiModel struct {
-	Name  string `json:"name" yaml:"name"` // 模型名称
-	Model string `json:"dto" yaml:"dto"`   // 模型代码
+	Name       string `json:"name" yaml:"name"`             // 模型名称
+	Model      string `json:"dto" yaml:"dto"`               // 模型代码
+	CanManager bool   `json:"canManager" yaml:"canManager"` // 是否可以在manager页面中选择
 }
