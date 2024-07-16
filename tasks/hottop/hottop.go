@@ -75,7 +75,10 @@ func getTopData() (data []string) {
 		}
 		d.Channel = "百度"
 		newDatas = append(newDatas, d)
-		data = append(data, fmt.Sprintf("标题: %s\n热度: %s\n详情: %s", d.Title, d.Hot, d.Url))
+		shortUrl := utils.GenShortUrl(d.Url)
+		if shortUrl != "" {
+			data = append(data, fmt.Sprintf("标题: %s\n热度: %s\n详情: %s", d.Title, d.Hot, shortUrl))
+		}
 	}
 	// 保存新数据到数据库
 	if len(newDatas) > 0 {
