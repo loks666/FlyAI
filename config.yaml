@@ -2,6 +2,8 @@ system:
   # 每日新闻接口 Token
   # 获取地址: https://admin.alapi.cn/api_manager/token_manager
   alApiToken: xxx
+  # 系统访问域名
+  domain: https://wechat.abc.com
   # 添加新好友或群之后通知给指定的人
   newFriendNotify:
     enable: true
@@ -48,7 +50,7 @@ mysql:
 
 # 定时任务
 task:
-  enable: true
+  enable: false
   news:
     enable: false
     cron: '14 11 * * *' # 每天0:30

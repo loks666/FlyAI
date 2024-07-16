@@ -2,6 +2,7 @@ package config
 
 // 系统配置
 type system struct {
+	Domain          string          `json:"domain" yaml:"domain"`                   // 域名
 	AlApiToken      string          `json:"alApiToken" yaml:"alApiToken"`           // AL API Token
 	NewFriendNotify newFriendNotify `json:"newFriendNotify" yaml:"newFriendNotify"` // 新好友通知
 	DefaultRule     defaultRule     `json:"defaultRule" yaml:"defaultRule"`         // 默认规则

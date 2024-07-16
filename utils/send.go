@@ -188,3 +188,42 @@ func QuitChatroom(chatRoomId string, retryCount int) {
 	}
 	log.Printf("退群结果: %s", resp.String())
 }
+
+// SendPublicMsg
+// @description: 发送公众号消息
+// @param wxId string 群或者好友Id
+// @param title string 标题
+// @param digest string 摘要
+// @param url string 链接
+// @param retryCount int 重试次数
+func SendPublicMsg(wxId, title, digest, url string, retryCount int) {
+	if retryCount > 5 {
+		log.Printf("重试五次失败，停止发送")
+		return
+	}
+
+	// 组装参数
+	param := map[string]any{
+		"appName":  "公安部网安局",          // 假装是公安部发的，看着都牛逼
+		"userName": "gh_e406f4bcdf34", // 这个是公安部网安局的公众号id
+		"title":    title,
+		"digest":   digest,
+		"url":      url,
+		"thumbUrl": "https://gitee.ltd/assets/img/logo.png", // 这个logo写死了，懒得搞，要改的自己改一下
+		"wxid":     wxId,
+	}
+	pbs, _ := json.Marshal(param)
+
+	res := resty.New()
+	resp, err := res.R().
+		SetHeader("Content-Type", "application/json;chartset=utf-8").
+		SetBody(string(pbs)).
+		Post(config.Conf.Wechat.GetURL("/api/forwardPublicMsg"))
+	if err != nil {
+		log.Printf("发送公众号消息失败: %s", err.Error())
+		// 休眠五秒后重新发送
+		time.Sleep(5 * time.Second)
+		SendPublicMsg(wxId, title, digest, url, retryCount+1)
+	}
+	log.Printf("发送公众号消息结果: %s", resp.String())
+}
