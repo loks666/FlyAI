@@ -102,6 +102,7 @@ ai:
   models:
     - name: ChatGPT-4
       model: gpt-4
+      canManager: false
     - name: 讯飞星火v3.1
       model: SparkDesk-v3.1
     - name: 讯飞星火v3.5
@@ -116,8 +117,10 @@ ai:
       model: StepChat
     - name: 豆包Lite-4k
       model: Doubao-lite-4k
+      canManager: true
     - name: 豆包Pro-4k
       model: Doubao-pro-4k
+      canManager: true
 
 # 资源配置
 # map[k]v结构，k 会变成全小写，所以这儿不能用大写字母
