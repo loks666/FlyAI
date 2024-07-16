@@ -4,6 +4,7 @@ package config
 type system struct {
 	Domain          string          `json:"domain" yaml:"domain"`                   // 域名
 	AlApiToken      string          `json:"alApiToken" yaml:"alApiToken"`           // AL API Token
+	UrlcApiToken    string          `json:"urlcApiToken" yaml:"urlcApiToken"`       // urlc.cn API Token
 	NewFriendNotify newFriendNotify `json:"newFriendNotify" yaml:"newFriendNotify"` // 新好友通知
 	DefaultRule     defaultRule     `json:"defaultRule" yaml:"defaultRule"`         // 默认规则
 }
