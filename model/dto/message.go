@@ -160,7 +160,11 @@ func (m Message) IsAtAll() bool {
 	// 转换@用户列表为数组
 	atUserList := strings.Split(d.AtUserList, ",")
 	// 判断是否包含@所有人
-	return slice.Contain(atUserList, "notify@all")
+	if slice.Contain(atUserList, "notify@all") {
+		return true
+	}
+	// 数据格式变动，再检查一下字符串是否包含 @所有人 字样
+	return m.IsAt() && strings.Contains(m.Content, "@所有人")
 }
 
 // IsPrivateText
