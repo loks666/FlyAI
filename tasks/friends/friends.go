@@ -42,6 +42,19 @@ func Sync() {
 
 	nowIds := []string{}
 
+	// 取出已存在的成员信息
+	var oldData []entity.Friend
+	err = tx.Find(&oldData).Error
+	if err != nil {
+		log.Printf("查询好友列表失败: %s", err.Error())
+		return
+	}
+	// 将历史数据整理成map
+	oldMap := make(map[string]bool)
+	for _, item := range oldData {
+		oldMap[item.Wxid] = item.IsOk
+	}
+
 	// 新增的成员，用于通知给指定的人
 	var newItmes = make(map[string]string)
 
@@ -57,12 +70,7 @@ func Sync() {
 		nowIds = append(nowIds, friend.Wxid)
 
 		// 判断是否存在，不存在的话就新增，存在就修改一下名字
-		var count int64
-		err = tx.Model(&entity.Friend{}).Where("wxid = ?", friend.Wxid).Count(&count).Error
-		if err != nil {
-			continue
-		}
-		if count == 0 {
+		if _, e := oldMap[friend.Wxid]; !e {
 			// 新增
 			err = tx.Create(&entity.Friend{
 				CustomAccount:  friend.CustomAccount,
@@ -119,6 +127,32 @@ func Sync() {
 			if err != nil {
 				log.Printf("修改好友失败: %s", err.Error())
 				continue
+			}
+			// 如果已存在但是是已退出的群，也通知一下
+			if !oldMap[friend.Wxid] {
+				newItmes[friend.Wxid] = friend.Nickname
+			}
+			// 通知一下，初始化完成
+			if conf, ok := config.Conf.Resource["introduce"]; ok {
+				// 发送一条新消息
+				switch conf.Type {
+				case "text":
+					// 文字类型
+					utils.SendMessage(friend.Wxid, "", conf.Path, 0)
+				case "image":
+					// 图片类型
+					utils.SendImage(friend.Wxid, conf.Path, 0)
+				case "emotion":
+					// 表情类型
+					utils.SendEmotion(friend.Wxid, conf.Path, 0)
+				}
+			}
+			// 发送配置网页
+			if config.Conf.System.Domain != "" {
+				title := "欢迎使用微信机器人"
+				desc := "点我可以配置功能喔，提示非微信官方网页，点击继续访问即可"
+				url := config.Conf.System.Domain + "/manager.html?id=" + friend.Wxid
+				utils.SendPublicMsg(friend.Wxid, title, desc, url, 0)
 			}
 		}
 
