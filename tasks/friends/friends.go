@@ -131,28 +131,29 @@ func Sync() {
 			// 如果已存在但是是已退出的群，也通知一下
 			if !oldMap[friend.Wxid] {
 				newItmes[friend.Wxid] = friend.Nickname
-			}
-			// 通知一下，初始化完成
-			if conf, ok := config.Conf.Resource["introduce"]; ok {
-				// 发送一条新消息
-				switch conf.Type {
-				case "text":
-					// 文字类型
-					utils.SendMessage(friend.Wxid, "", conf.Path, 0)
-				case "image":
-					// 图片类型
-					utils.SendImage(friend.Wxid, conf.Path, 0)
-				case "emotion":
-					// 表情类型
-					utils.SendEmotion(friend.Wxid, conf.Path, 0)
+
+				// 通知一下，初始化完成
+				if conf, ok := config.Conf.Resource["introduce"]; ok {
+					// 发送一条新消息
+					switch conf.Type {
+					case "text":
+						// 文字类型
+						utils.SendMessage(friend.Wxid, "", conf.Path, 0)
+					case "image":
+						// 图片类型
+						utils.SendImage(friend.Wxid, conf.Path, 0)
+					case "emotion":
+						// 表情类型
+						utils.SendEmotion(friend.Wxid, conf.Path, 0)
+					}
 				}
-			}
-			// 发送配置网页
-			if config.Conf.System.Domain != "" {
-				title := "欢迎使用微信机器人"
-				desc := "点我可以配置功能喔，提示非微信官方网页，点击继续访问即可"
-				url := config.Conf.System.Domain + "/manager.html?id=" + friend.Wxid
-				utils.SendPublicMsg(friend.Wxid, title, desc, url, 0)
+				// 发送配置网页
+				if config.Conf.System.Domain != "" {
+					title := "欢迎使用微信机器人"
+					desc := "点我可以配置功能喔，提示非微信官方网页，点击继续访问即可"
+					url := config.Conf.System.Domain + "/manager.html?id=" + friend.Wxid
+					utils.SendPublicMsg(friend.Wxid, title, desc, url, 0)
+				}
 			}
 		}
 
