@@ -86,14 +86,22 @@
         {{ if eq $isGroup true }}
         <!-- 水群排行榜 -->
         <div class="flex justify-between gap-x-4 py-3 items-center">
-          <dt class="text-gray-500">水群排行榜</dt>
+          <dt class="text-gray-500">
+            水群排行榜
+            <br/>
+            <span class="text-red-300">* 每天早上七点半定时发送</span>
+          </dt>
           <dd class="flex items-start gap-x-2">
             {{ template "chatRank" .info }}
           </dd>
         </div>
         <!-- 群聊总结 -->
         <div class="flex justify-between gap-x-4 py-3 items-center">
-          <dt class="text-gray-500">群聊总结</dt>
+          <dt class="text-gray-500">
+            群聊总结
+            <br/>
+            <span class="text-red-300">* 每天0点30定时发送</span>
+          </dt>
           <dd class="flex items-start gap-x-2">
             {{ template "summary" .info }}
           </dd>
@@ -108,18 +116,26 @@
         {{ end }}
         <!-- 早报 -->
         <div class="flex justify-between gap-x-4 py-3 items-center">
-          <dt class="text-gray-500">早报</dt>
+          <dt class="text-gray-500">
+            早报
+            <br/>
+            <span class="text-red-300">* 每天早上八点定时发送</span>
+          </dt>
           <dd class="flex items-start gap-x-2">
             {{ template "news" .info }}
           </dd>
         </div>
         <!-- 热榜 -->
-        <div class="flex justify-between gap-x-4 py-3 items-center">
-          <dt class="text-gray-500">热榜</dt>
-          <dd class="flex items-start gap-x-2">
-            {{ template "hotTop" .info }}
-          </dd>
-        </div>
+<!--        <div class="flex justify-between gap-x-4 py-3 items-center">-->
+<!--          <dt class="text-gray-500">-->
+<!--            热榜-->
+<!--            <br/>-->
+<!--            <span class="text-red-300">* 每个整点定时发送</span>-->
+<!--          </dt>-->
+<!--          <dd class="flex items-start gap-x-2">-->
+<!--            {{ template "hotTop" .info }}-->
+<!--          </dd>-->
+<!--        </div>-->
         {{ if eq $isGroup true }}
         <!-- 自动清理不活跃成员 -->
         <div class="flex justify-between gap-x-4 py-3 items-center">
