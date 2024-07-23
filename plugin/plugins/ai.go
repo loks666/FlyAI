@@ -132,7 +132,7 @@ func AI(m *plugin.MessageContext) {
 
 	if err != nil {
 		log.Printf("OpenAI聊天发起失败: %v", err.Error())
-		utils.SendMessage(m.FromUser, m.GroupUser, "AI炸啦~", 0)
+		utils.SendMessage(m.FromUser, m.GroupUser, "AI聊天初始化失败，我已经通知我主人来修啦，请稍候一下下喔～", 0)
 		return
 	}
 
