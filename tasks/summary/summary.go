@@ -74,11 +74,13 @@ func AiSummary() {
 
 		if err != nil {
 			log.Printf("群聊记录总结失败: %v", err.Error())
+			utils.SendMessage(group.Wxid, "", "#昨日消息总结\n\n群聊消息总结失败，错误信息: "+err.Error(), 0)
 			continue
 		}
 
 		// 返回消息为空
 		if resp.Choices[0].Message.Content == "" {
+			utils.SendMessage(group.Wxid, "", "#昨日消息总结\n\n群聊消息总结失败，AI返回结果为空", 0)
 			continue
 		}
 		replyMsg := fmt.Sprintf("#昨日消息总结\n又是一天过去了，让我们一起来看看昨儿群友们都聊了什么有趣的话题吧~\n\n%s", resp.Choices[0].Message.Content)
