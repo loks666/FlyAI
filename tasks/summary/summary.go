@@ -10,6 +10,7 @@ import (
 	"go-wechat/utils"
 	"log"
 	"strings"
+	"time"
 )
 
 // AiSummary
@@ -22,6 +23,9 @@ func AiSummary() {
 	}
 
 	for _, group := range groups {
+		// 记录开始时间
+		var start = time.Now()
+
 		// 获取对话记录
 		var records []vo.TextMessageItem
 		if records, err = service.GetTextMessagesById(group.Wxid); err != nil {
@@ -86,5 +90,10 @@ func AiSummary() {
 		replyMsg := fmt.Sprintf("#昨日消息总结\n又是一天过去了，让我们一起来看看昨儿群友们都聊了什么有趣的话题吧~\n\n%s", resp.Choices[0].Message.Content)
 		//log.Printf("群[%s]对话记录总结成功，总结内容: %s", group.Wxid, replyMsg)
 		utils.SendMessage(group.Wxid, "", replyMsg, 0)
+
+		// 判断耗时是否达到15秒，不足就等待
+		if used := time.Now().Sub(start); used < 15*time.Second {
+			time.Sleep(15*time.Second - used)
+		}
 	}
 }
