@@ -57,10 +57,11 @@ func ClearGroupUser() {
 // @param days 需要清理的未活跃的天数
 // @return members
 func getNeedDeleteMembers(groupId string, days int) (members []entity.GroupUser) {
-	err := client.MySQL.Model(&entity.GroupUser{}).Where("group_id = ?", groupId).
+	err := client.MySQL.Model(&entity.GroupUser{}).
+		Where("group_id = ?", groupId).
+		Where("wxid != ?", current.GetRobotInfo().WxId).
 		Where("is_member IS TRUE").
 		Where("DATEDIFF( NOW(), last_active ) >= ?", days).
-		Where("wxid != ?", current.GetRobotInfo().WxId).
 		Order("last_active DESC").
 		Find(&members).Error
 	if err != nil {
