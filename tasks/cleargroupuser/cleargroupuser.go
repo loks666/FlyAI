@@ -3,6 +3,7 @@ package cleargroupuser
 import (
 	"fmt"
 	"go-wechat/client"
+	"go-wechat/common/current"
 	"go-wechat/model/entity"
 	"go-wechat/service"
 	"go-wechat/utils"
@@ -15,7 +16,7 @@ import (
 func ClearGroupUser() {
 	groups, err := service.GetAllEnableClearGroup()
 	if err != nil {
-		log.Printf("获取启用了聊天排行榜的群组失败, 错误信息: %v", err)
+		log.Printf("获取启用了末位淘汰的群组失败, 错误信息: %v", err)
 		return
 	}
 
@@ -56,7 +57,9 @@ func ClearGroupUser() {
 // @param days 需要清理的未活跃的天数
 // @return members
 func getNeedDeleteMembers(groupId string, days int) (members []entity.GroupUser) {
-	err := client.MySQL.Model(&entity.GroupUser{}).Where("group_id = ?", groupId).
+	err := client.MySQL.Model(&entity.GroupUser{}).
+		Where("group_id = ?", groupId).
+		Where("wxid != ?", current.GetRobotInfo().WxId).
 		Where("is_member IS TRUE").
 		Where("DATEDIFF( NOW(), last_active ) >= ?", days).
 		Order("last_active DESC").
