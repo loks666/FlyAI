@@ -27,7 +27,7 @@ func Plugin() {
 	// 通知邀请入群消息到配置用户
 	dispatcher.RegisterHandler(func(m *dto.Message) bool {
 		flag, _ := m.IsInvitationJoinGroup()
-		return flag
+		return flag && !m.IsGroup()
 	}, plugins.NotifyInvitationJoinGroup)
 	// 被移除群聊通知到配置用户
 	dispatcher.RegisterHandler(func(m *dto.Message) bool {
