@@ -168,7 +168,7 @@ func UpdateAiUsedToday(wxId string) {
 // ClearAiUsedToday
 // @description: 清空AI今日使用次数
 func ClearAiUsedToday() {
-	err := client.MySQL.Model(&entity.Friend{}).
+	err := client.MySQL.Model(&entity.Friend{}).Where("is_ok = 1").
 		Update("`ai_used_today`", 0).Error
 	if err != nil {
 		log.Printf("清空AI今日使用次数失败, 错误信息: %v", err)
