@@ -37,6 +37,17 @@ func AI(m *plugin.MessageContext) {
 	if !friendInfo.EnableAi {
 		return
 	}
+	if friendInfo.AiUsedToday > 0 && friendInfo.AiUsedToday >= friendInfo.AiFreeLimit {
+		_ = utils.SendMessage(m.FromUser, "", fmt.Sprintf("本群今天的免费次数已经用完啦，明天再来找我聊天吧~\n每天限制%d次，0点自动重置", friendInfo.AiFreeLimit), 0)
+		return
+	}
+
+	var err error
+	defer func() {
+		if err == nil {
+			service.UpdateAiUsedToday(m.FromUser)
+		}
+	}()
 
 	// 预处理一下发送的消息，用正则去掉@机器人的内容
 	re := regexp.MustCompile(`@([^ | ]+)`)
@@ -132,17 +143,17 @@ func AI(m *plugin.MessageContext) {
 
 	if err != nil {
 		log.Printf("OpenAI聊天发起失败: %v", err.Error())
-		utils.SendMessage(m.FromUser, m.GroupUser, "AI聊天初始化失败，我已经通知我主人来修啦，请稍候一下下喔～", 0)
+		_ = utils.SendMessage(m.FromUser, m.GroupUser, "AI聊天初始化失败，我已经通知我主人来修啦，请稍候一下下喔～", 0)
 		return
 	}
 
 	// 返回消息为空
 	if len(resp.Choices) == 0 || resp.Choices[0].Message.Content == "" {
-		utils.SendMessage(m.FromUser, m.GroupUser, "AI似乎抽风了，没有告诉我你需要的回答~", 0)
+		_ = utils.SendMessage(m.FromUser, m.GroupUser, "AI似乎抽风了，没有告诉我你需要的回答~", 0)
 		return
 	}
 
-	// 异步更新一下已使用的AI次数
+	// 异步更新一下已使用的AI tokens
 	go service.UpdateUsedAiTokens(m.FromUser, resp.Usage.TotalTokens)
 
 	// 保存一下AI 返回的消息，消息 Id 使用传入 Id 的负数
@@ -162,7 +173,7 @@ func AI(m *plugin.MessageContext) {
 	if m.GroupUser != "" {
 		replyMsg = "\n" + resp.Choices[0].Message.Content
 	}
-	utils.SendMessage(m.FromUser, m.GroupUser, replyMsg, 0)
+	err = utils.SendMessage(m.FromUser, m.GroupUser, replyMsg, 0)
 }
 
 // getGroupUserMessages

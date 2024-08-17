@@ -152,3 +152,25 @@ func UpdateUsedAiTokens(wxId string, tokens int) {
 		log.Printf("更新AI使用次数失败, 错误信息: %v", err)
 	}
 }
+
+// UpdateAiUsedToday
+// @description: 更新AI今日使用次数
+// @param wxId
+func UpdateAiUsedToday(wxId string) {
+	err := client.MySQL.Model(&entity.Friend{}).
+		Where("wxid = ?", wxId).
+		Update("`ai_used_today`", gorm.Expr(" `ai_used_today` + 1")).Error
+	if err != nil {
+		log.Printf("更新AI今日使用次数失败, 错误信息: %v", err)
+	}
+}
+
+// ClearAiUsedToday
+// @description: 清空AI今日使用次数
+func ClearAiUsedToday() {
+	err := client.MySQL.Model(&entity.Friend{}).
+		Update("`ai_used_today`", 0).Error
+	if err != nil {
+		log.Printf("清空AI今日使用次数失败, 错误信息: %v", err)
+	}
+}

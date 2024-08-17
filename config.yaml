@@ -25,6 +25,8 @@ system:
     news: true
     # 热榜
     hotTop: true
+    # 每天免费 AI 次数限制
+    aiFreeLimit: 50
 
 # 微信HOOK配置
 wechat:
