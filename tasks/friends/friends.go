@@ -85,6 +85,7 @@ func Sync() {
 				EnableWelcome:  config.Conf.System.DefaultRule.Welcome,
 				EnableNews:     config.Conf.System.DefaultRule.News,
 				EnableHotTop:   config.Conf.System.DefaultRule.HotTop,
+				AiFreeLimit:    config.Conf.System.DefaultRule.AiFreeLimit,
 				ClearMember:    0,
 				LastActive:     types.DateTime(time.Now().Local()),
 			}).Error

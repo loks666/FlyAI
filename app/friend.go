@@ -280,3 +280,26 @@ func AutoClearMembers(ctx *gin.Context) {
 
 	ctx.String(http.StatusOK, "操作成功")
 }
+
+// ChangeAiFreeLimit
+// @description: 修改AI免费次数
+// @param ctx
+func ChangeAiFreeLimit(ctx *gin.Context) {
+	var p autoClearMembers
+	if err := ctx.ShouldBindJSON(&p); err != nil {
+		ctx.String(http.StatusBadRequest, "参数错误")
+		return
+	}
+	log.Printf("待修改的Id：%s", p.WxId)
+
+	err := client.MySQL.Model(&entity.Friend{}).
+		Where("wxid = ?", p.WxId).
+		Update("`ai_free_limit`", p.Days).Error
+	if err != nil {
+		log.Printf("修改AI免费次数失败：%s", err)
+		ctx.String(http.StatusInternalServerError, "操作失败: %s", err)
+		return
+	}
+
+	ctx.String(http.StatusOK, "操作成功")
+}

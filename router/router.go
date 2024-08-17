@@ -26,6 +26,7 @@ func Init(g *gin.Engine) {
 	api := g.Group("/api")
 	api.PUT("/ai/status", app.ChangeEnableAiStatus)               // 修改是否开启AI状态
 	api.POST("/ai/model", app.ChangeUseAiModel)                   // 修改使用的AI模型
+	api.POST("/ai/free", app.ChangeAiFreeLimit)                   // 修改AI免费次数
 	api.POST("/ai/assistant", app.ChangeUseAiAssistant)           // 修改使用的AI助手
 	api.PUT("/welcome/status", app.ChangeEnableWelcomeStatus)     // 修改是否开启迎新状态
 	api.PUT("/command/status", app.ChangeEnableCommandStatus)     // 修改是否开启指令状态

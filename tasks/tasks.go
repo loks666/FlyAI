@@ -65,6 +65,8 @@ func InitTasks() {
 
 	// 每天0点检查一次处理清理群成员
 	_, _ = s.Cron("0 0 * * *").Do(cleargroupuser.ClearGroupUser)
+	// 每天0点清空AI日使用次数
+	_, _ = s.Cron("0 0 * * *").Do(friends.ClearAiUsedToday)
 
 	// 开启定时任务
 	s.StartAsync()

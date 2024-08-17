@@ -81,6 +81,13 @@
             {{ end }}
           </dd>
         </div>
+        <!-- 今日 AI 对话已使用次数 -->
+        <div class="flex justify-between gap-x-4 py-3 items-center">
+          <dt class="text-gray-500">今日 AI 对话已使用次数</dt>
+          <dd class="flex items-start gap-x-2">
+            {{ .info.AiUsedToday }}次(限制{{ .info.AiFreeLimit }}次)
+          </dd>
+        </div>
 
         {{$isGroup := checkIsGroup .info.Wxid}}
         {{ if eq $isGroup true }}

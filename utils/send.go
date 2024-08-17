@@ -2,6 +2,7 @@ package utils
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/go-resty/resty/v2"
 	"go-wechat/common/current"
@@ -15,9 +16,10 @@ import (
 // @param toId
 // @param atId
 // @param msg
-func SendMessage(toId, atId, msg string, retryCount int) {
+func SendMessage(toId, atId, msg string, retryCount int) (err error) {
 	if retryCount > 5 {
 		log.Printf("重试五次失败，停止发送")
+		err = errors.New("重试五次失败，停止发送")
 		return
 	}
 
@@ -48,9 +50,10 @@ func SendMessage(toId, atId, msg string, retryCount int) {
 		log.Printf("发送文本消息失败: %s", err.Error())
 		// 休眠五秒后重新发送
 		time.Sleep(5 * time.Second)
-		SendMessage(toId, atId, msg, retryCount+1)
+		return SendMessage(toId, atId, msg, retryCount+1)
 	}
 	log.Printf("发送文本消息结果: %s", resp.String())
+	return
 }
 
 // SendImage

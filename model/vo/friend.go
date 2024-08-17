@@ -24,6 +24,8 @@ type FriendItem struct {
 	EnableHotTop   bool           // 是否启用热搜
 	ClearMember    int            // 清理成员配置（多少天未活跃的）
 	IsOk           bool           // 是否还在通讯库(群聊是要还在群里也算)
+	AiFreeLimit    int            // AI免费次数
+	AiUsedToday    int            // 今日已使用的AI次数
 }
 
 // GroupUserItem
