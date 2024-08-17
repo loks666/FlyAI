@@ -19,6 +19,8 @@ import (
 	"time"
 )
 
+var notifyMap = make(map[string]bool)
+
 // AI
 // @description: AI消息
 // @param m
@@ -38,8 +40,14 @@ func AI(m *plugin.MessageContext) {
 		return
 	}
 	if friendInfo.AiUsedToday > 0 && friendInfo.AiUsedToday >= friendInfo.AiFreeLimit {
+		if notifyMap[m.FromUser] {
+			return
+		}
 		_ = utils.SendMessage(m.FromUser, "", fmt.Sprintf("本群今天的免费次数已经用完啦，明天再来找我聊天吧~\n每天限制%d次，0点自动重置", friendInfo.AiFreeLimit), 0)
+		notifyMap[m.FromUser] = true
 		return
+	} else {
+		notifyMap[m.FromUser] = false
 	}
 
 	var err error
