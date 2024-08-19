@@ -219,3 +219,36 @@ func (m Message) IsInvitationJoinGroup() (flag bool, str string) {
 	}
 	return
 }
+
+// IsNewFriendAdd
+// @description: 是否是新好友添加消息
+// @receiver m
+// @return flag
+func (m Message) IsNewFriendAdd() (flag bool) {
+	if m.Type != types.MsgTypeSys {
+		return
+	}
+	return strings.HasPrefix(m.Content, "你已添加了") && strings.HasSuffix(m.Content, "，现在可以开始聊天了。")
+}
+
+// IsOldFriendBack
+// @description: 是否是老好友回归消息
+// @receiver m
+// @return flag
+func (m Message) IsOldFriendBack() (flag bool) {
+	if m.Type != types.MsgTypeSys {
+		return
+	}
+	return m.Content == "以上是打招呼的内容"
+}
+
+// IsJoinToGroup
+// @description: 是否是加入群聊消息
+// @receiver m
+// @return flag
+func (m Message) IsJoinToGroup() (flag bool) {
+	if m.Type != types.MsgTypeSys {
+		return
+	}
+	return strings.Contains(m.Content, "\"邀请你加入了群聊，群聊参与人还有：")
+}

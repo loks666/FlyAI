@@ -35,7 +35,7 @@ func Plugin() {
 	}, plugins.NotifyRemoveFromChatroom)
 	// 响应好友添加成功消息
 	dispatcher.RegisterHandler(func(m *dto.Message) bool {
-		return m.Type == types.MsgTypeSys
+		return m.IsNewFriendAdd() || m.IsJoinToGroup() || m.IsOldFriendBack()
 	}, plugins.ReplyNewFriend)
 
 	// 私聊指令消息

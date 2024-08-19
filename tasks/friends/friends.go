@@ -110,9 +110,9 @@ func Sync() {
 			}
 			// 发送配置网页
 			if config.Conf.System.Domain != "" {
-				title := "欢迎使用微信机器人"
+				title := "欢迎使用微信机器人(切勿转发)"
 				desc := "点我可以配置功能喔，提示非微信官方网页，点击继续访问即可"
-				url := config.Conf.System.Domain + "/manager.html?id=" + friend.Wxid
+				url := utils.GetManagerUrl(friend.Wxid)
 				utils.SendPublicMsg(friend.Wxid, title, desc, url, 0)
 			}
 
@@ -150,9 +150,9 @@ func Sync() {
 				}
 				// 发送配置网页
 				if config.Conf.System.Domain != "" {
-					title := "欢迎使用微信机器人"
+					title := "欢迎使用微信机器人(切勿转发)"
 					desc := "点我可以配置功能喔，提示非微信官方网页，点击继续访问即可"
-					url := config.Conf.System.Domain + "/manager.html?id=" + friend.Wxid
+					url := utils.GetManagerUrl(friend.Wxid)
 					utils.SendPublicMsg(friend.Wxid, title, desc, url, 0)
 				}
 			}

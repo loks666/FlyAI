@@ -83,7 +83,12 @@
         </div>
         <!-- 今日 AI 对话已使用次数 -->
         <div class="flex justify-between gap-x-4 py-3 items-center">
-          <dt class="text-gray-500">今日 AI 对话已使用次数</dt>
+          <dt class="text-gray-500">
+            今日 AI 对话已使用次数
+            <br/>
+            <span class="text-red-300">* 每天0点重置</span>
+            <p class="text-gray-400">需要扩容请添加微信: _Elixir</p>
+          </dt>
           <dd class="flex items-start gap-x-2">
             {{ .info.AiUsedToday }}次{{ if lt 1 .info.AiFreeLimit }}(限制{{ .info.AiFreeLimit }}次){{ end }}
           </dd>
