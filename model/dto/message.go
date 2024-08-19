@@ -252,3 +252,14 @@ func (m Message) IsJoinToGroup() (flag bool) {
 	}
 	return strings.Contains(m.Content, "\"邀请你加入了群聊，群聊参与人还有：")
 }
+
+// IsRemoveFromChatroom
+// @description: 是否是被移出群聊消息
+// @receiver m
+// @return flag
+func (m Message) IsRemoveFromChatroom() (flag bool) {
+	if m.Type != types.MsgTypeSys {
+		return
+	}
+	return strings.HasPrefix(m.Content, "你被\"") && strings.HasSuffix(m.Content, "\"移出群聊")
+}
