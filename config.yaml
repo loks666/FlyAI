@@ -4,7 +4,7 @@ system:
   alApiToken: xxx
   # urlc.cn的Token，用来生成短链接
   urlcApiToken: xxx
-  # 系统访问域名
+  # 系统访问域名，必须是包括 http[s]:// 的完整域名
   domain: https://wechat.abc.com
   # 添加新好友或群之后通知给指定的人
   newFriendNotify:
