@@ -16,6 +16,6 @@ func GetManagerUrl(wxId string) (url string) {
 	// base64一下
 	encodeString := base64.StdEncoding.EncodeToString([]byte(url))
 	// 拼接新链接（这个是一个已备案的域名）
-	url = "https://redirect.wjg95.cn/?s=" + encodeString
+	url = "https://redirect.gitee.ltd/?s=" + encodeString
 	return
 }
