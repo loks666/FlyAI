@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"go-wechat/plugin"
+	"go-wechat/service"
 	"go-wechat/utils"
 )
 
@@ -15,4 +16,13 @@ func ReplyNewFriend(m *plugin.MessageContext) {
 	if m.IsOldFriendBack() {
 		_ = utils.SendMessage(m.FromUser, m.GroupUser, "嘿，我的朋友，你为何要离我而去？又为何去而复返？", 0)
 	}
+
+	go func() {
+		// 刷新好友列表
+		service.SyncFriend()
+		// 如果是加入群，刷新群成员列表
+		if m.IsJoinToGroup() {
+			service.SyncGroupMembers(m.FromUser)
+		}
+	}()
 }

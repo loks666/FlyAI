@@ -61,9 +61,9 @@ task:
   hotTop:
     enable: true
     cron: '0 */1 * * *' # 每小时一次
-  syncFriends:
+  syncFriends: # 逻辑已修改，每天大半夜同步一次即可(主要是用以修正数据)，平时会根据收到的消息针对性同步
     enable: false
-    cron: '*/5 * * * *' # 五分钟一次
+    cron: '0 4 * * *' # 每天4:00
   groupSummary:
     enable: false
     cron: '30 0 * * *' # 每天0:30

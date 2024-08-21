@@ -5,6 +5,7 @@ import (
 	"go-wechat/config"
 	"go-wechat/model/entity"
 	"go-wechat/plugin"
+	"go-wechat/service"
 	"go-wechat/utils"
 )
 
@@ -28,7 +29,7 @@ func WelcomeNew(m *plugin.MessageContext) {
 	switch conf.Type {
 	case "text":
 		// 文字类型
-		utils.SendMessage(m.FromUser, "", conf.Path, 0)
+		_ = utils.SendMessage(m.FromUser, "", conf.Path, 0)
 	case "image":
 		// 图片类型
 		utils.SendImage(m.FromUser, conf.Path, 0)
@@ -36,4 +37,7 @@ func WelcomeNew(m *plugin.MessageContext) {
 		// 表情类型
 		utils.SendEmotion(m.FromUser, conf.Path, 0)
 	}
+
+	// 刷新群成员列表
+	go service.SyncGroupMembers(m.FromUser)
 }
