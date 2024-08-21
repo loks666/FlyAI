@@ -12,6 +12,8 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -22,6 +24,13 @@ func init() {
 	initialization.Plugin()              // 注册插件
 	tasks.InitTasks()                    // 初始化定时任务
 	mq.Init()                            // 初始化MQ
+
+	if flag, _ := strconv.ParseBool(os.Getenv("DONT_SEND")); flag {
+		log.Printf("已设置环境变量DONT_SEND，不发送消息")
+	}
+	if flag, _ := strconv.ParseBool(os.Getenv("DONT_SAVE")); flag {
+		log.Printf("已设置环境变量DONT_SAVE，不保存消息")
+	}
 }
 
 func main() {
