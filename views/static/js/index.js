@@ -317,3 +317,30 @@ function changeAiFreeLimit(wxid, limitNumber) {
     window.location.reload();
   })
 }
+
+// 发送AI群聊总结
+function sendAiSummary(wxid) {
+  if (wxid === '') {
+    alert("wxid不能为空")
+    return
+  }
+  if (!confirm("确定发送AI群聊总结吗?")) {
+    return
+  }
+  // 请求接口
+  axios({
+    method: 'post',
+    url: '/api/ai/summary',
+    params: {
+      id: wxid,
+    }
+  }).then(function (response) {
+    console.log(`返回结果: ${JSON.stringify(response)}`);
+    alert(`${response.data}`)
+  }).catch(function (error) {
+    console.log(`错误信息: ${error}`);
+    alert(`${response.data}`)
+  }).finally(function () {
+    window.location.reload();
+  })
+}

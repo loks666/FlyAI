@@ -8,6 +8,8 @@ import (
 	"go-wechat/common/current"
 	"go-wechat/config"
 	"log"
+	"os"
+	"strconv"
 	"time"
 )
 
@@ -17,6 +19,10 @@ import (
 // @param atId
 // @param msg
 func SendMessage(toId, atId, msg string, retryCount int) (err error) {
+	if flag, _ := strconv.ParseBool(os.Getenv("DONT_SEND")); flag {
+		return
+	}
+
 	if retryCount > 5 {
 		log.Printf("重试五次失败，停止发送")
 		err = errors.New("重试五次失败，停止发送")
@@ -62,6 +68,10 @@ func SendMessage(toId, atId, msg string, retryCount int) (err error) {
 // @param imgPath string 图片路径
 // @param retryCount int 重试次数
 func SendImage(toId, imgPath string, retryCount int) {
+	if flag, _ := strconv.ParseBool(os.Getenv("DONT_SEND")); flag {
+		return
+	}
+
 	if retryCount > 5 {
 		log.Printf("重试五次失败，停止发送")
 		return
@@ -94,6 +104,10 @@ func SendImage(toId, imgPath string, retryCount int) {
 // @param emotionHash string 表情包hash(md5值)
 // @param retryCount int 重试次数
 func SendEmotion(toId, emotionHash string, retryCount int) {
+	if flag, _ := strconv.ParseBool(os.Getenv("DONT_SEND")); flag {
+		return
+	}
+
 	if retryCount > 5 {
 		log.Printf("重试五次失败，停止发送")
 		return
@@ -200,6 +214,10 @@ func QuitChatroom(chatRoomId string, retryCount int) {
 // @param url string 链接
 // @param retryCount int 重试次数
 func SendPublicMsg(wxId, title, digest, url string, retryCount int) {
+	if flag, _ := strconv.ParseBool(os.Getenv("DONT_SEND")); flag {
+		return
+	}
+
 	if retryCount > 5 {
 		log.Printf("重试五次失败，停止发送")
 		return
