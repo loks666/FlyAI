@@ -1,15 +1,11 @@
 package summary
 
 import (
-	"context"
 	"fmt"
-	"github.com/sashabaranov/go-openai"
-	"go-wechat/config"
 	"go-wechat/model/vo"
 	"go-wechat/service"
 	"go-wechat/utils"
 	"log"
-	"strings"
 	"time"
 )
 
@@ -37,63 +33,21 @@ func AiSummary() {
 			continue
 		}
 		// 组装对话记录为字符串
-		var content []string
-		for _, record := range records {
-			content = append(content, fmt.Sprintf(`{"%s": "%s"}--end--`, record.Nickname, strings.ReplaceAll(record.Message, "\n", "。。")))
-		}
-
-		msgTmp := `请帮我总结一下一下的群聊内容的梗概，生成的梗概需要尽可能详细，需要带上一些聊天关键信息，并且带上群友名字。
-注意，他们可能是多个话题，请仔细甄别。
-每一行代表一个人的发言，每一行的的格式为： {"{nickname}": "{content}"}--end--
-
-群名称: %s
-聊天记录如下:
-%s
-`
-
-		msg := fmt.Sprintf(msgTmp, group.Nickname, strings.Join(content, "\n"))
-
-		// AI总结
-		messages := []openai.ChatCompletionMessage{
-			{
-				Role:    openai.ChatMessageRoleUser,
-				Content: msg,
-			},
-		}
-
-		// 默认使用AI回复
-		conf := openai.DefaultConfig(config.Conf.Ai.ApiKey)
-		if config.Conf.Ai.BaseUrl != "" {
-			conf.BaseURL = fmt.Sprintf("%s/v1", config.Conf.Ai.BaseUrl)
-		}
-		ai := openai.NewClientWithConfig(conf)
-		var resp openai.ChatCompletionResponse
-		resp, err = ai.CreateChatCompletion(
-			context.Background(),
-			openai.ChatCompletionRequest{
-				Model:    config.Conf.Ai.SummaryModel,
-				Messages: messages,
-			},
-		)
-
+		var replyMsg string
+		replyMsg, err = utils.GetAiSummary(group.Nickname, records)
 		if err != nil {
 			log.Printf("群聊记录总结失败: %v", err.Error())
-			utils.SendMessage(group.Wxid, "", "#昨日消息总结\n\n群聊消息总结失败，错误信息: "+err.Error(), 0)
+			_ = utils.SendMessage(group.Wxid, "", "#昨日消息总结\n\n群聊消息总结失败，错误信息: "+err.Error(), 0)
 			continue
 		}
 
-		// 返回消息为空
-		if resp.Choices[0].Message.Content == "" {
-			utils.SendMessage(group.Wxid, "", "#昨日消息总结\n\n群聊消息总结失败，AI返回结果为空", 0)
-			continue
-		}
-		replyMsg := fmt.Sprintf("#昨日消息总结\n又是一天过去了，让我们一起来看看昨儿群友们都聊了什么有趣的话题吧~\n\n%s", resp.Choices[0].Message.Content)
+		replyMsg = fmt.Sprintf("#昨日消息总结\n又是一天过去了，让我们一起来看看昨儿群友们都聊了什么有趣的话题吧~\n\n%s", replyMsg)
 		//log.Printf("群[%s]对话记录总结成功，总结内容: %s", group.Wxid, replyMsg)
-		utils.SendMessage(group.Wxid, "", replyMsg, 0)
+		_ = utils.SendMessage(group.Wxid, "", replyMsg, 0)
 
-		// 判断耗时是否达到15秒，不足就等待
-		if used := time.Now().Sub(start); used < 15*time.Second {
-			time.Sleep(15*time.Second - used)
+		// 判断耗时是否达到一分钟，不足就等待
+		if used := time.Now().Sub(start); used < time.Minute {
+			time.Sleep(time.Minute - used)
 		}
 	}
 }
