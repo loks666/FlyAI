@@ -43,7 +43,7 @@ func AI(m *plugin.MessageContext) {
 	if !friendInfo.EnableAi {
 		return
 	}
-	if friendInfo.AiUsedToday > 0 && friendInfo.AiUsedToday >= friendInfo.AiFreeLimit {
+	if friendInfo.AiFreeLimit > 0 && friendInfo.AiUsedToday >= friendInfo.AiFreeLimit {
 		if notifyMap[m.FromUser] {
 			return
 		}
