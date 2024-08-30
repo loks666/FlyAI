@@ -250,7 +250,11 @@ func (m Message) IsJoinToGroup() (flag bool) {
 	if m.Type != types.MsgTypeSys {
 		return
 	}
-	return strings.Contains(m.Content, "\"邀请你加入了群聊，群聊参与人还有：")
+	flag = strings.Contains(m.Content, "\"邀请你加入了群聊，群聊参与人还有：")
+	if flag {
+		return
+	}
+	return strings.Contains(m.Content, "\"邀请你和\"") && strings.Contains(m.Content, "\"加入了群聊")
 }
 
 // IsRemoveFromChatroom
@@ -262,4 +266,15 @@ func (m Message) IsRemoveFromChatroom() (flag bool) {
 		return
 	}
 	return strings.HasPrefix(m.Content, "你被\"") && strings.HasSuffix(m.Content, "\"移出群聊")
+}
+
+// IsChangeGroupName
+// @description: 是否是修改群名称消息
+// @receiver m
+// @return flag
+func (m Message) IsChangeGroupName() (flag bool) {
+	if m.Type != types.MsgTypeSys {
+		return
+	}
+	return strings.HasPrefix(m.Content, "\"修改群名为“")
 }

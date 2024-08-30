@@ -31,7 +31,7 @@ system:
 # 微信HOOK配置
 wechat:
   # 微信HOOK接口地址
-  host: 10.0.0.79:19088
+  host: 10.0.0.79:19098
   # 微信容器映射出来的vnc页面地址，没有就不填
   #  vncUrl: http://192.168.1.175:19087/vnc_lite.html
   # 是否在启动的时候自动设置hook服务的回调
@@ -81,7 +81,7 @@ mq:
   enable: false
   # RabbitMQ配置
   rabbitmq:
-    host: 10.0.0.247
+    host: 10.0.0.31
     port: 5672
     user: wechat
     password: wechat123
