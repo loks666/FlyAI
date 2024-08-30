@@ -15,7 +15,7 @@ import (
 // @param m
 func NotifyInvitationJoinGroup(m *plugin.MessageContext) {
 	// 先回复一条固定消息
-	if conf, e := config.Conf.Resource["invitationJoinGroup"]; e {
+	if conf, e := config.Conf.Resource["invitation-join-group"]; e {
 		// 发送一条新消息
 		switch conf.Type {
 		case "text":
@@ -30,14 +30,13 @@ func NotifyInvitationJoinGroup(m *plugin.MessageContext) {
 		}
 	}
 
-	// 如果是邀请进群，推送到配置的用户
-	if flag, dec := m.IsInvitationJoinGroup(); flag {
-		for _, user := range config.Conf.System.NewFriendNotify.ToUser {
-			if user != "" {
-				// 发送一条新消息
-				dec = fmt.Sprintf("#邀请入群提醒\n\n%s", dec)
-				_ = utils.SendMessage(user, "", dec, 0)
-			}
+	// 推送到配置的用户
+	_, dec := m.IsInvitationJoinGroup()
+	for _, user := range config.Conf.System.NewFriendNotify.ToUser {
+		if user != "" {
+			// 发送一条新消息
+			dec = fmt.Sprintf("#邀请入群提醒\n\n%s", dec)
+			_ = utils.SendMessage(user, "", dec, 0)
 		}
 	}
 }
