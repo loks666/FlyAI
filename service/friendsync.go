@@ -237,7 +237,7 @@ func SyncGroupMembers(wxId string) {
 				// 新增的
 				// 新增
 				err = client.MySQL.Create(&entity.GroupUser{
-					GroupId:    wxid,
+					GroupId:    wxId,
 					Account:    cp.Account,
 					HeadImage:  cp.HeadImage,
 					Nickname:   cp.Nickname,
