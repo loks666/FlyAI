@@ -11,6 +11,25 @@ import (
 
 func ensureSchema() {
 	migrator := client.MySQL.Migrator()
+	// Older deployments created these tables outside GORM. A fresh Docker
+	// database has no schema yet, so create only missing base tables here while
+	// leaving existing installations and their data untouched.
+	baseModels := []interface{}{
+		&entity.Friend{},
+		&entity.GroupUser{},
+		&entity.Message{},
+		&entity.AiAssistant{},
+		&entity.HotTop{},
+		&entity.PluginData{},
+	}
+	for _, model := range baseModels {
+		if migrator.HasTable(model) {
+			continue
+		}
+		if err := migrator.CreateTable(model); err != nil {
+			log.Panicf("创建基础数据表失败: %v", err)
+		}
+	}
 	if !migrator.HasColumn(&entity.Friend{}, "EnableMonitor") {
 		if err := migrator.AddColumn(&entity.Friend{}, "EnableMonitor"); err != nil {
 			log.Panicf("新增群监控开关字段失败: %v", err)
@@ -28,6 +47,18 @@ func ensureSchema() {
 			log.Panicf("新增潜水统计开关字段失败: %v", err)
 		}
 		log.Printf("数据库升级完成: 已新增潜水统计开关")
+	}
+	if !migrator.HasColumn(&entity.Friend{}, "EnableCommand") {
+		if err := migrator.AddColumn(&entity.Friend{}, "EnableCommand"); err != nil {
+			log.Panicf("新增私聊指令开关字段失败: %v", err)
+		}
+		log.Printf("数据库升级完成: 已新增私聊指令开关")
+	}
+	if !migrator.HasColumn(&entity.GroupUser{}, "WechatNickname") {
+		if err := migrator.AddColumn(&entity.GroupUser{}, "WechatNickname"); err != nil {
+			log.Panicf("新增群成员微信昵称字段失败: %v", err)
+		}
+		log.Printf("数据库升级完成: 已新增群成员微信昵称字段")
 	}
 	hadFeatureSchedule := migrator.HasColumn(&entity.FeatureSetting{}, "Schedule")
 	hadMessageThreshold := migrator.HasColumn(&entity.FeatureSetting{}, "MessageThreshold")

@@ -29,6 +29,7 @@ type Friend struct {
 	UsedTokens     int            `json:"usedTokens"`                                               // 已使用的AI Token数量
 	AiFreeLimit    int            `json:"aiFreeLimit"`                                              // AI免费次数
 	AiUsedToday    int            `json:"aiUsedToday"`                                              // 今日已使用的AI次数
+	EnableCommand  bool           `json:"enableCommand" gorm:"type:tinyint(1) default 0 not null"`  // 是否允许私聊指令
 }
 
 func (Friend) TableName() string {
@@ -38,17 +39,18 @@ func (Friend) TableName() string {
 // GroupUser
 // @description: 群成员
 type GroupUser struct {
-	GroupId      string     `json:"groupId"`                                                // 群Id
-	Wxid         string     `json:"wxid"`                                                   // 微信Id
-	Account      string     `json:"account"`                                                // 账号
-	HeadImage    string     `json:"headImage"`                                              // 头像
-	Nickname     string     `json:"nickname"`                                               // 昵称
-	IsMember     bool       `json:"isMember" gorm:"type:tinyint(1) default 0 not null"`     // 是否群成员
-	IsAdmin      bool       `json:"isAdmin" gorm:"type:tinyint(1) default 0 not null"`      // 是否群主
-	JoinTime     time.Time  `json:"joinTime"`                                               // 加入时间
-	LastActive   time.Time  `json:"lastActive"`                                             // 最后活跃时间
-	LeaveTime    *time.Time `json:"leaveTime"`                                              // 离开时间
-	SkipChatRank bool       `json:"skipChatRank" gorm:"type:tinyint(1) default 0 not null"` // 是否跳过聊天排行
+	GroupId        string     `json:"groupId"`                                                // 群Id
+	Wxid           string     `json:"wxid"`                                                   // 微信Id
+	Account        string     `json:"account"`                                                // 账号
+	HeadImage      string     `json:"headImage"`                                              // 头像
+	Nickname       string     `json:"nickname"`                                               // 昵称
+	WechatNickname string     `json:"wechatNickname"`                                         // 微信个人昵称
+	IsMember       bool       `json:"isMember" gorm:"type:tinyint(1) default 0 not null"`     // 是否群成员
+	IsAdmin        bool       `json:"isAdmin" gorm:"type:tinyint(1) default 0 not null"`      // 是否群主
+	JoinTime       time.Time  `json:"joinTime"`                                               // 加入时间
+	LastActive     time.Time  `json:"lastActive"`                                             // 最后活跃时间
+	LeaveTime      *time.Time `json:"leaveTime"`                                              // 离开时间
+	SkipChatRank   bool       `json:"skipChatRank" gorm:"type:tinyint(1) default 0 not null"` // 是否跳过聊天排行
 }
 
 func (GroupUser) TableName() string {
