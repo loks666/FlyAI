@@ -1,0 +1,197 @@
+# FlyAI
+
+FlyAI 是一个面向 Windows 微信 4.x 的本地群聊管理、数据分析与 AI 助手项目。它可以采集你选择监控的群聊消息，在网页端查看活跃度、发言排行、潜水成员、热点和周报，并通过兼容 OpenAI API 的模型完成群聊问答。
+
+项目地址：[https://github.com/loks666/FlyAI](https://github.com/loks666/FlyAI)
+
+> 项目只读取本机已登录微信的数据，并通过 Windows UI Automation 发送文本消息，不注入 DLL。微信并未为这些能力提供官方接口，使用前请充分了解风险并遵守相关平台规则。
+
+## 主要功能
+
+- **群聊数据分析**：消息数量、发言排行、消息类型、活跃率等统计。
+- **潜水成员识别**：按统计周期和阈值生成低活跃成员报告。
+- **群聊周报**：汇总群聊活跃情况、热门话题和成员表现。
+- **热点推送**：定时获取热点内容，并按群独立配置推送策略。
+- **AI 群聊助手**：支持 OpenAI 兼容接口，可配置 API Key、Base URL、模型和群聊人设。
+- **群主命令**：绑定管理员后，可在群聊中触发周报、潜水报告和热点等操作。
+- **联系人管理**：同步好友和群聊，在网页端查看联系人并发送文本消息。
+- **安全回填**：桥接器重启后可回填本周遗漏消息；回填只修复数据，不触发 AI 或自动回复。
+- **网页控制台**：集中配置监控群、定时任务、AI、端口和功能开关。
+- **Windows 一键启动**：一个 `start.bat` 自动准备便携环境、启动 MySQL、微信桥接器和管理服务。
+
+## 运行结构
+
+```text
+已登录的 Windows 微信 4.x
+          │
+          ▼
+Python 本地桥接器 ──读取本机数据库 / UIA 发送文本
+          │ 127.0.0.1:19099
+          ▼
+FlyAI Go 服务 ─────消息处理、统计、任务与 AI
+          │
+          ├── MySQL（Docker）
+          └── Web 控制台 http://127.0.0.1:8080
+```
+
+所有服务默认只监听本机地址。只有在你主动启用 AI 时，相关消息内容才会发送给所配置的 AI 服务商。
+
+## 快速开始
+
+### 环境要求
+
+- Windows 10/11 x64
+- 已安装并启动 [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+- 已登录的 Windows 微信 4.x（建议 4.1.12 或更高版本）
+- 首次启动时可连接互联网，用于下载便携式 Go、Python 依赖和 Docker 镜像
+
+### 一键启动
+
+```powershell
+git clone https://github.com/loks666/FlyAI.git
+cd FlyAI
+.\start.bat
+```
+
+也可以下载源码后直接双击 `start.bat`。首次启动将自动：
+
+1. 从 `.env.example` 生成仅保存在本地的 `.env`；
+2. 在 `.runtime` 中准备便携式 Go 和 Python 环境；
+3. 使用 Docker Compose 启动 MySQL；
+4. 启动微信桥接器和 FlyAI 服务；
+5. 打开 `http://127.0.0.1:8080`。
+
+下载的运行环境全部放在项目目录中，不会覆盖系统已有的 Go 或 Python。
+
+### 脚本命令
+
+同一个脚本负责完整生命周期：
+
+```powershell
+.\start.bat           # 启动，并打开管理页面
+.\start.bat status    # 查看各组件状态
+.\start.bat logs      # 打开日志目录
+.\start.bat restart   # 重启 FlyAI
+.\start.bat stop      # 停止 FlyAI 及其 MySQL 容器
+.\start.bat update    # 更新便携依赖并重新构建
+```
+
+## 首次使用
+
+1. 确认微信客户端已经登录，并保持主窗口可用。
+2. 运行 `start.bat`，等待管理页面自动打开。
+3. 在联系人页面同步好友和群聊。
+4. 进入群聊管理，只为需要分析的群开启消息监控。
+5. 按需开启周报、潜水报告、热点推送或 AI 助手。
+6. 在设置页面检查定时任务和 AI 参数。
+
+为避免首次接入时产生意外回复，建议先只开启监控，确认数据正常后再逐项启用自动化功能。
+
+## AI 配置
+
+FlyAI 使用 OpenAI Chat Completions 兼容接口。复制环境变量示例后即可配置：
+
+```powershell
+Copy-Item .env.example .env
+notepad .env
+```
+
+主要配置项：
+
+```dotenv
+AI_ENABLE=false
+AI_API_KEY=
+AI_BASE_URL=https://api.openai.com
+AI_MODEL=gpt-4o-mini
+```
+
+- `AI_ENABLE`：是否启用全局 AI 能力。
+- `AI_API_KEY`：模型服务商提供的密钥。
+- `AI_BASE_URL`：OpenAI 兼容 API 地址，请按服务商文档填写。
+- `AI_MODEL`：服务商支持的模型名称。
+
+网页端还可以为不同群聊设置是否启用 AI、模型和角色设定。密钥保存在本地配置中；`.env` 和自动生成的 `config.yaml` 已被 Git 忽略，不会被提交。
+
+## 常用配置
+
+完整示例见 [`.env.example`](.env.example)。常用项目包括：
+
+| 配置 | 默认值 | 说明 |
+| --- | --- | --- |
+| `HUB_HTTP_PORT` | `8080` | 管理页面端口 |
+| `HUB_INGEST_PORT` | `19099` | Go 服务接收消息的端口 |
+| `BRIDGE_HTTP_PORT` | `19089` | 微信桥接器监听端口 |
+| `WECHAT_HOST` | `127.0.0.1:19089` | Go 服务访问桥接器的地址 |
+| `MYSQL_PORT` | `3307` | 本地 MySQL 映射端口 |
+| `MYSQL_USER` | `wechat` | FlyAI 数据库用户 |
+| `MYSQL_PASSWORD` | `wechat` | FlyAI 数据库密码 |
+| `MYSQL_DATABASE` | `wechat` | 数据库名 |
+
+如果本机端口已占用，可以修改 `.env` 后执行 `.\start.bat restart`。
+
+## 群主命令
+
+在网页端绑定管理员并开启对应功能后，可通过 `@机器人` 触发：
+
+```text
+@机器人 /周报
+@机器人 /潜水
+@机器人 /热点
+```
+
+命令只对已绑定的管理员生效，避免普通群成员触发管理操作。
+
+## 数据与隐私
+
+- 微信数据库只在本机读取，不会由 FlyAI 自动上传。
+- 只有明确开启监控的群聊才进入分析流程。
+- AI 未启用时，不会向模型服务商发送群聊内容。
+- AI 启用后，参与回答所需的内容会发送到你配置的 API 地址，请自行确认服务商的隐私政策。
+- 默认 Web、桥接器和消息入口均绑定 `127.0.0.1`，不要在不清楚风险时暴露到公网。
+- `.env`、`config.yaml`、数据库和运行日志均已加入 Git 忽略规则。
+
+## 开发运行
+
+如果已经自行安装 Go、Python 和 MySQL，也可以不使用一键脚本：
+
+```powershell
+go mod download
+go test ./...
+go run .
+```
+
+桥接器的安装、协议和独立运行方式见 [`bridge/README.md`](bridge/README.md)。
+
+## 项目目录
+
+```text
+app/        Web 路由与页面接口
+bridge/     微信 4.x 本地数据库与 UIA 桥接器
+config/     配置定义与加载
+plugin/     消息处理、AI 和群主命令插件
+service/    群聊、联系人、功能设置等业务逻辑
+tasks/      周报、潜水报告、热点等定时任务
+views/      Web 控制台页面与静态资源
+doc/        设计与后续规划文档
+```
+
+## Agent 规划
+
+当前版本已经提供 AI 群聊回复能力。下一阶段计划将推送、周报、潜水分析、联系人查询等能力封装为受控工具，让 Agent 可以根据自然语言组合调用。设计边界和分阶段方案见 [`doc/agent-integration-plan.md`](doc/agent-integration-plan.md)。
+
+## 已知限制
+
+- 目前只支持 Windows 微信 4.x。
+- 当前发送能力以文本消息为主。
+- UI Automation 会受微信界面或版本更新影响。
+- 本项目不是微信官方产品，也不提供账号安全保证。
+
+## 参与贡献
+
+欢迎提交 Issue 和 Pull Request。报告问题时，请附上 Windows、微信版本、复现步骤和已脱敏的相关日志。
+
+FlyAI 基于原项目历史代码继续维护，并保留 Git 提交历史以便追溯贡献。
+
+## 免责声明
+
+本项目仅用于个人学习、研究与本地自动化。使用者应遵守所在地法律法规、微信服务条款及群成员隐私约定，并自行承担使用风险。

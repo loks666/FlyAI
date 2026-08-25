@@ -2,9 +2,9 @@ package initialization
 
 import (
 	"github.com/go-resty/resty/v2"
-	"go-wechat/common/current"
-	"go-wechat/config"
-	"go-wechat/model/dto"
+	"github.com/loks666/FlyAI/common/current"
+	"github.com/loks666/FlyAI/config"
+	"github.com/loks666/FlyAI/model/dto"
 	"log"
 )
 

@@ -5,8 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"github.com/go-resty/resty/v2"
-	"go-wechat/common/current"
-	"go-wechat/config"
+	"github.com/loks666/FlyAI/common/current"
+	"github.com/loks666/FlyAI/config"
+	"github.com/loks666/FlyAI/model/dto"
 	"log"
 	"os"
 	"strconv"
@@ -47,9 +48,14 @@ func SendMessage(toId, atId, msg string, retryCount int) (err error) {
 	}
 	pbs, _ := json.Marshal(param)
 
+	var result dto.Response[struct {
+		Sent   bool   `json:"sent"`
+		Detail string `json:"detail"`
+	}]
 	res := resty.New()
 	resp, err := res.R().
 		SetHeader("Content-Type", "application/json;chartset=utf-8").
+		SetResult(&result).
 		SetBody(string(pbs)).
 		Post(apiUrl)
 	if err != nil {
@@ -59,6 +65,19 @@ func SendMessage(toId, atId, msg string, retryCount int) (err error) {
 		return SendMessage(toId, atId, msg, retryCount+1)
 	}
 	log.Printf("发送文本消息结果: %s", resp.String())
+	if resp.IsError() {
+		return fmt.Errorf("微信桥接服务返回 HTTP %d", resp.StatusCode())
+	}
+	if result.Code != 1 || !result.Data.Sent {
+		detail := result.Data.Detail
+		if detail == "" {
+			detail = result.Msg
+		}
+		if detail == "" {
+			detail = "微信桥接服务未确认发送成功"
+		}
+		return errors.New(detail)
+	}
 	return
 }
 
@@ -225,12 +244,12 @@ func SendPublicMsg(wxId, title, digest, url string, retryCount int) {
 
 	// 组装参数
 	param := map[string]any{
-		"appName":  "公安部网安局",          // 假装是公安部发的，看着都牛逼
-		"userName": "gh_e406f4bcdf34", // 这个是公安部网安局的公众号id
+		"appName":  "FlyAI",
+		"userName": "",
 		"title":    title,
 		"digest":   digest,
 		"url":      url,
-		"thumbUrl": "https://gitee.ltd/assets/img/logo.png", // 这个logo写死了，懒得搞，要改的自己改一下
+		"thumbUrl": "https://raw.githubusercontent.com/loks666/FlyAI/main/views/static/img/logo.png",
 		"wxid":     wxId,
 	}
 	pbs, _ := json.Marshal(param)

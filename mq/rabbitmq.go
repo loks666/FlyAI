@@ -1,8 +1,8 @@
 package mq
 
 import (
+	"github.com/loks666/FlyAI/config"
 	amqp "github.com/rabbitmq/amqp091-go"
-	"go-wechat/config"
 	"log"
 )
 

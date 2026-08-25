@@ -2,9 +2,9 @@ package tcpserver
 
 import (
 	"encoding/json"
-	"go-wechat/common/current"
-	"go-wechat/model/dto"
-	"go-wechat/types"
+	"github.com/loks666/FlyAI/common/current"
+	"github.com/loks666/FlyAI/model/dto"
+	"github.com/loks666/FlyAI/types"
 	"log"
 	"net"
 	"strings"

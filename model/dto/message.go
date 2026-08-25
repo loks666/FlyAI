@@ -3,7 +3,7 @@ package dto
 import (
 	"encoding/xml"
 	"github.com/duke-git/lancet/v2/slice"
-	"go-wechat/types"
+	"github.com/loks666/FlyAI/types"
 	"regexp"
 	"strings"
 )
@@ -22,6 +22,7 @@ type Message struct {
 	Signature          string            `json:"signature"`
 	ToUser             string            `json:"toUser"`
 	Type               types.MessageType `json:"type"`
+	IsBackfill         bool              `json:"isBackfill"`
 	Raw                string            `json:"raw"`
 }
 

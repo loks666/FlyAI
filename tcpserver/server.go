@@ -3,13 +3,19 @@ package tcpserver
 import (
 	"log"
 	"net"
+	"os"
+	"strconv"
 )
 
 // Start
 // @description: 启动服务
 func Start() {
 	// 建立 tcp 服务
-	listen, err := net.Listen("tcp", "0.0.0.0:19099")
+	port := os.Getenv("HUB_INGEST_PORT")
+	if _, err := strconv.Atoi(port); err != nil {
+		port = "19099"
+	}
+	listen, err := net.Listen("tcp", net.JoinHostPort("127.0.0.1", port))
 	if err != nil {
 		log.Printf("listen failed, err:%v", err)
 		return

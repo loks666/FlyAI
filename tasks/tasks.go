@@ -2,13 +2,13 @@ package tasks
 
 import (
 	"github.com/go-co-op/gocron"
-	"go-wechat/config"
-	"go-wechat/tasks/cleargroupuser"
-	"go-wechat/tasks/friends"
-	"go-wechat/tasks/hottop"
-	"go-wechat/tasks/news"
-	"go-wechat/tasks/summary"
-	"go-wechat/tasks/watergroup"
+	"github.com/loks666/FlyAI/config"
+	"github.com/loks666/FlyAI/service"
+	"github.com/loks666/FlyAI/tasks/cleargroupuser"
+	"github.com/loks666/FlyAI/tasks/friends"
+	"github.com/loks666/FlyAI/tasks/hottop"
+	"github.com/loks666/FlyAI/tasks/summary"
+	"github.com/loks666/FlyAI/tasks/watergroup"
 	"log"
 	"time"
 )
@@ -30,9 +30,6 @@ func InitTasks() {
 		if config.Conf.Task.WaterGroup.Cron.Yesterday != "" {
 			_, _ = s.Cron(config.Conf.Task.WaterGroup.Cron.Yesterday).Do(watergroup.Yesterday)
 		}
-		if config.Conf.Task.WaterGroup.Cron.Week != "" {
-			_, _ = s.Cron(config.Conf.Task.WaterGroup.Cron.Week).Do(watergroup.Week)
-		}
 		if config.Conf.Task.WaterGroup.Cron.Month != "" {
 			_, _ = s.Cron(config.Conf.Task.WaterGroup.Cron.Month).Do(watergroup.Month)
 		}
@@ -50,13 +47,12 @@ func InitTasks() {
 	// 更新好友列表
 	if config.Conf.Task.SyncFriends.Enable {
 		log.Printf("更新好友列表任务已启用，执行表达式: %s", config.Conf.Task.SyncFriends.Cron)
-		_, _ = s.Cron(config.Conf.Task.SyncFriends.Cron).Do(friends.Sync)
+		_, _ = s.Cron(config.Conf.Task.SyncFriends.Cron).Do(service.SyncFriendCatalog)
+		go service.SyncFriendCatalog()
 	}
 
-	// 每日早报
-	if config.Conf.Task.News.Enable {
-		_, _ = s.Cron(config.Conf.Task.News.Cron).Do(news.DailyNews)
-	}
+	// 可扩展定时功能由数据库中的统一时间驱动，修改后无需重启。
+	_, _ = s.Cron("* * * * *").Do(RunTimedFeatures)
 
 	// 热榜
 	if config.Conf.Task.HotTop.Enable {

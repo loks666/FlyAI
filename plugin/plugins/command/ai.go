@@ -2,9 +2,9 @@ package command
 
 import (
 	"fmt"
-	"go-wechat/client"
-	"go-wechat/model/entity"
-	"go-wechat/utils"
+	"github.com/loks666/FlyAI/client"
+	"github.com/loks666/FlyAI/model/entity"
+	"github.com/loks666/FlyAI/utils"
 	"log"
 	"strings"
 )

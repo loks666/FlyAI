@@ -2,7 +2,7 @@ package entity
 
 import (
 	"github.com/google/uuid"
-	"go-wechat/common/types"
+	"github.com/loks666/FlyAI/common/types"
 	"gorm.io/gorm"
 	"strings"
 )

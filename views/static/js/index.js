@@ -1,346 +1,288 @@
-console.log("打开首页")
+console.log("FlyAI 已加载")
 
-//	改变AI开启状态
-function changeAiEnableStatus(wxId) {
-  // console.log("修改AI开启状态: ", wxId)
-
-  axios({
-    method: 'put',
-    url: '/api/ai/status',
-    data: {
-      wxId: wxId
-    }
-  }).then(function (response) {
-    console.log(`返回结果: ${JSON.stringify(response)}`);
-    alert(`${response.data}`)
-  }).catch(function (error) {
-    console.log(`错误信息: ${error}`);
-    alert("修改失败")
-  }).finally(function () {
-    window.location.reload();
+async function putJson(url, data, errorMessage) {
+  const response = await fetch(url, {
+    method: "PUT",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(data),
   })
+  if (!response.ok) {
+    throw new Error((await response.text()) || errorMessage)
+  }
+  return response
 }
 
-// 修改水群排行榜状态
-function changeGroupRankEnableStatus(wxId) {
-  // console.log("修改水群排行榜开启状态: ", wxId)
-  axios({
-    method: 'put',
-    url: '/api/grouprank/status',
-    data: {
-      wxId: wxId
-    }
-  }).then(function (response) {
-    console.log(`返回结果: ${JSON.stringify(response)}`);
-    alert(`${response.data}`)
-  }).catch(function (error) {
-    console.log(`错误信息: ${error}`);
-    alert("修改失败")
-  }).finally(function () {
-    window.location.reload();
-  })
+function showPageActionStatus(message, type = "success") {
+  const status = document.querySelector('[data-testid="page-action-status"]')
+  status.textContent = message
+  status.className = `mb-6 rounded-xl px-4 py-3 text-sm ${type === "error" ? "bg-red-50 text-red-700" : type === "loading" ? "bg-blue-50 text-blue-700" : "bg-green-50 text-green-700"}`
 }
 
-// 修改水群排行榜状态
-function changeSummaryEnableStatus(wxId) {
-  // console.log("修改聊天记录总结开启状态: ", wxId)
-  axios({
-    method: 'put',
-    url: '/api/summary/status',
-    data: {
-      wxId: wxId
-    }
-  }).then(function (response) {
-    console.log(`返回结果: ${JSON.stringify(response)}`);
-    alert(`${response.data}`)
-  }).catch(function (error) {
-    console.log(`错误信息: ${error}`);
-    alert("修改失败")
-  }).finally(function () {
-    window.location.reload();
-  })
+async function syncWechatCatalog() {
+  const button = document.querySelector('[data-testid="sync-wechat"]')
+  const originalText = button.textContent
+  button.disabled = true
+  button.textContent = "同步中…"
+  showPageActionStatus("正在读取微信群、通讯录和当前群成员，请稍候…", "loading")
+  try {
+    const response = await fetch("/api/sync/wechat", {method: "POST", headers: {"Content-Type": "application/json"}, body: "{}"})
+    const result = await response.json().catch(() => ({message: "服务器返回异常"}))
+    if (!response.ok) throw new Error(result.message || "同步失败")
+    showPageActionStatus(`${result.message}：${result.groups} 个群、${result.contacts} 位联系人、${result.members} 位当前群成员`)
+  } catch (error) {
+    console.error(error)
+    showPageActionStatus(error.message || "同步失败", "error")
+  } finally {
+    button.disabled = false
+    button.textContent = originalText
+  }
 }
 
-// 修改欢迎语开启状态
-function changeWelcomeEnableStatus(wxId) {
-  axios({
-    method: 'put',
-    url: '/api/welcome/status',
-    data: {
-      wxId: wxId
-    }
-  }).then(function (response) {
-    console.log(`返回结果: ${JSON.stringify(response)}`);
-    alert(`${response.data}`)
-  }).catch(function (error) {
-    console.log(`错误信息: ${error}`);
-    alert("修改失败")
-  }).finally(function () {
-    window.location.reload();
-  })
+// 主开关关闭后，桥接层不会读取或转发该群的新消息。
+async function changeGroupMonitorStatus(wxId) {
+  try {
+    await putJson("/api/monitor/status", {wxId}, "修改群监控状态失败")
+    window.location.reload()
+  } catch (error) {
+    console.error(error)
+    showPageActionStatus("修改群监控状态失败", "error")
+  }
 }
 
-// 修改用户新闻开启状态
-function changeUserNewsStatus(wxId) {
-  axios({
-    method: 'put',
-    url: '/api/news/status',
-    data: {
-      wxId: wxId
-    }
-  }).then(function (response) {
-    console.log(`返回结果: ${JSON.stringify(response)}`);
-    alert(`${response.data}`)
-  }).catch(function (error) {
-    console.log(`错误信息: ${error}`);
-    alert("修改失败")
-  }).finally(function () {
-    window.location.reload();
-  })
+async function changeGroupRankEnableStatus(wxId) {
+  try {
+    await putJson("/api/grouprank/status", {wxId}, "修改排行榜状态失败")
+    window.location.reload()
+  } catch (error) {
+    console.error(error)
+    showPageActionStatus("修改排行榜状态失败", "error")
+  }
 }
 
-// 修改用户热搜开启状态
-function changeUserHotTopStatus(wxId) {
-  axios({
-    method: 'put',
-    url: '/api/hot-top/status',
-    data: {
-      wxId: wxId
-    }
-  }).then(function (response) {
-    console.log(`返回结果: ${JSON.stringify(response)}`);
-    alert(`${response.data}`)
-  }).catch(function (error) {
-    console.log(`错误信息: ${error}`);
-    alert("修改失败")
-  }).finally(function () {
-    window.location.reload();
-  })
+async function changeGroupNewsStatus(wxId) {
+  try {
+    await putJson("/api/news/status", {wxId}, "修改每日热点早报状态失败")
+    window.location.reload()
+  } catch (error) {
+    console.error(error)
+    showPageActionStatus("修改每日热点早报状态失败", "error")
+  }
 }
 
-// 修改指令权限启用状态
-function changeCommandEnableStatus(wxId) {
-  axios({
-    method: 'put',
-    url: '/api/command/status',
-    data: {
-      wxId: wxId
-    }
-  }).then(function (response) {
-    console.log(`返回结果: ${JSON.stringify(response)}`);
-    alert(`${response.data}`)
-  }).catch(function (error) {
-    console.log(`错误信息: ${error}`);
-    alert("修改失败")
-  }).finally(function () {
-    window.location.reload();
-  })
+async function changeGroupDormantStatus(wxId) {
+  try {
+    await putJson("/api/dormant/status", {wxId}, "修改潜水成员统计状态失败")
+    window.location.reload()
+  } catch (error) {
+    console.error(error)
+    showPageActionStatus("修改潜水成员统计状态失败", "error")
+  }
 }
 
-// 修改群成员是否参与排行榜状态
-function changeUserGroupRankSkipStatus(groupId, userId) {
-  console.log("修改水群排行榜开启状态: ", groupId, userId)
-  axios({
-    method: 'put',
-    url: '/api/grouprank/skip',
-    data: {
-      wxId: groupId,
-      userId: userId
-    }
-  }).then(function (response) {
-    console.log(`返回结果: ${JSON.stringify(response)}`);
-    alert(`${response.data}`)
-  }).catch(function (error) {
-    console.log(`错误信息: ${error}`);
-    alert("修改失败")
-  }).finally(function () {
-    window.location.reload();
-  })
+function sendWeeklyRank(button) {
+  executeWeeklyRank(button.dataset.wxid)
 }
 
-// 获取群成员列表
-function getGroupUsers(groupId, groupName) {
-  // 获取表格的tbody部分，以便稍后向其中添加行
-  var tbody = document.getElementById("groupUsers");
-  tbody.innerHTML = ""
+function sendAllWeeklyRanks() {
+  executeAllWeeklyRanks()
+}
 
-  // 打开模态框
-  const modal = document.getElementById("groupUserModal");
+function sendAINews(button) {
+  executeAINews(button.dataset.wxid)
+}
+
+function sendDormantReport(button) {
+  executeDormantReport(button.dataset.wxid)
+}
+
+async function executeWeeklyRank(wxid) {
+  const button = document.querySelector(`[data-testid="send-weekly-${CSS.escape(wxid)}"]`)
+  const status = document.querySelector(`[data-testid="weekly-status-${CSS.escape(wxid)}"]`)
+  const originalText = button.textContent
+  button.disabled = true
+  button.textContent = "发送中…"
+  status.textContent = ""
+  status.className = "hidden max-w-full text-xs"
+
+  try {
+    const response = await fetch("/api/tasks/weekly-rank", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({wxId: wxid}),
+    })
+    const result = await response.json().catch(() => ({message: "服务器返回异常"}))
+    if (!response.ok) throw new Error(result.message || "发送失败")
+    status.textContent = `✓ ${result.message}`
+    status.className = "inline-flex max-w-full items-center rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700"
+  } catch (error) {
+    console.error(error)
+    status.textContent = error.message || "发送失败"
+    status.className = "inline-flex max-w-full items-center rounded-full bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700"
+  } finally {
+    button.disabled = false
+    button.textContent = originalText
+  }
+}
+
+async function executeAllWeeklyRanks() {
+  const button = document.querySelector('[data-testid="send-all-weekly"]')
+  const originalText = button.textContent
+  button.disabled = true
+  button.textContent = "批量发送中…"
+  showPageActionStatus("正在批量生成并发送排行榜…", "loading")
+
+  try {
+    const response = await fetch("/api/tasks/weekly-rank/all", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({}),
+    })
+    const result = await response.json().catch(() => ({message: "服务器返回异常"}))
+    if (!response.ok) throw new Error(result.message || "批量发送失败")
+    showPageActionStatus(result.message, result.failed > 0 ? "error" : "success")
+  } catch (error) {
+    console.error(error)
+    showPageActionStatus(error.message || "批量发送失败", "error")
+  } finally {
+    button.disabled = false
+    button.textContent = originalText
+  }
+}
+
+async function executeAINews(wxId) {
+  const button = document.querySelector(`[data-testid="send-ai-news-${CSS.escape(wxId)}"]`)
+  const status = document.querySelector(`[data-testid="ai-news-status-${CSS.escape(wxId)}"]`)
+  const originalText = button.textContent
+  button.disabled = true
+  button.textContent = "发送中…"
+  status.textContent = ""
+  status.className = "hidden max-w-full text-xs"
+  try {
+    const response = await fetch("/api/tasks/ai-news", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({wxId}),
+    })
+    const result = await response.json().catch(() => ({message: "服务器返回异常"}))
+    if (!response.ok) throw new Error(result.message || "每日热点早报发送失败")
+    status.textContent = `✓ ${result.message}`
+    status.className = "inline-flex max-w-full items-center rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700"
+  } catch (error) {
+    console.error(error)
+    status.textContent = error.message || "每日热点早报发送失败"
+    status.className = "inline-flex max-w-full items-center rounded-full bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700"
+  } finally {
+    button.disabled = false
+    button.textContent = originalText
+  }
+}
+
+async function executeDormantReport(wxId) {
+  const button = document.querySelector(`[data-testid="send-dormant-${CSS.escape(wxId)}"]`)
+  const status = document.querySelector(`[data-testid="dormant-status-${CSS.escape(wxId)}"]`)
+  const originalText = button.textContent
+  button.disabled = true
+  button.textContent = "发送中…"
+  status.textContent = ""
+  status.className = "hidden max-w-full text-xs"
+  try {
+    const response = await fetch("/api/tasks/dormant", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({wxId}),
+    })
+    const result = await response.json().catch(() => ({message: "服务器返回异常"}))
+    if (!response.ok) throw new Error(result.message || "潜水成员统计发送失败")
+    status.textContent = `✓ ${result.message}`
+    status.className = "inline-flex max-w-full items-center rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700"
+  } catch (error) {
+    console.error(error)
+    status.textContent = error.message || "潜水成员统计发送失败"
+    status.className = "inline-flex max-w-full items-center rounded-full bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700"
+  } finally {
+    button.disabled = false
+    button.textContent = originalText
+  }
+}
+
+async function changeUserGroupRankSkipStatus(groupId, userId) {
+  try {
+    await putJson("/api/grouprank/skip", {wxId: groupId, userId}, "修改成员排行状态失败")
+    const modal = document.getElementById("groupUserModal")
+    await loadGroupUsers(groupId, modal.dataset.groupName || "")
+  } catch (error) {
+    console.error(error)
+    showPageActionStatus("修改成员排行状态失败", "error")
+  }
+}
+
+function addTextCell(row, value) {
+  const cell = row.insertCell()
+  cell.textContent = value ?? ""
+}
+
+function addBooleanCell(row, value) {
+  const cell = row.insertCell()
+  const tag = document.createElement("span")
+  tag.className = `inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${value ? "bg-green-50 text-green-700 ring-green-600/20" : "bg-red-50 text-red-700 ring-red-600/20"}`
+  tag.textContent = value ? "是" : "否"
+  cell.appendChild(tag)
+}
+
+function addRankSkipCell(row, groupId, userId, skipped) {
+  const cell = row.insertCell()
+  const button = document.createElement("button")
+  button.type = "button"
+  button.role = "switch"
+  button.ariaChecked = String(skipped)
+  button.ariaLabel = `排行榜排除 ${userId}`
+  button.className = `${skipped ? "bg-gray-400" : "bg-green-600"} relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors`
+
+  const knob = document.createElement("span")
+  knob.className = `${skipped ? "translate-x-5" : "translate-x-0"} pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow transition`
+  button.appendChild(knob)
+  button.addEventListener("click", () => changeUserGroupRankSkipStatus(groupId, userId))
+  cell.appendChild(button)
+}
+
+async function loadGroupUsers(groupId, groupName) {
+  const tbody = document.getElementById("groupUsers")
+  const title = document.getElementById("groupUserModalName")
+  const count = document.getElementById("groupUserCount")
+  tbody.replaceChildren()
+  title.textContent = "加载中…"
+
+  const response = await fetch(`/api/group/users?groupId=${encodeURIComponent(groupId)}`)
+  if (!response.ok) {
+    throw new Error((await response.text()) || "获取群成员失败")
+  }
+
+  const data = await response.json()
+  count.textContent = `健在成员: ${data.isOkCount}人`
+  for (const member of data.records || []) {
+    const row = tbody.insertRow()
+    addTextCell(row, member.wxid)
+    addTextCell(row, member.nickname)
+    addBooleanCell(row, member.isMember)
+    addBooleanCell(row, member.isAdmin)
+    addTextCell(row, member.joinTime)
+    addTextCell(row, member.lastActive)
+    addTextCell(row, member.leaveTime)
+    addRankSkipCell(row, groupId, member.wxid, member.skipChatRank)
+  }
+  title.textContent = groupName
+}
+
+async function getGroupUsers(groupId, groupName) {
+  const modal = document.getElementById("groupUserModal")
+  modal.dataset.groupId = groupId
+  modal.dataset.groupName = groupName
   modal.showModal()
-
-  // 设置群名称
-  const groupNameTag = document.getElementById("groupUserModalName");
-  groupNameTag.innerHTML = '<span class="loading loading-dots loading-lg"></span>'
-
-  // 显示加载框
-  // const loading = document.getElementById("groupUserDataLoading");
-  // loading.style.display = "block"
-
-  axios.get('/api/group/users', {
-    params: {
-      groupId: groupId
-    }
-  }).then(function (response) {
-    // console.log(`返回结果: ${JSON.stringify(response.data)}`);
-    // 渲染群成员列表
-    const groupUsers = response.data.records;
-    const groupUserCount = response.data.isOkCount;
-
-    // 设置成员总数
-    const groupUserCountTag = document.getElementById("groupUserCount");
-    groupUserCountTag.innerHTML = `健在成员: ${groupUserCount}人`
-
-    // 循环渲染数据
-    groupUsers.forEach((groupUser, i) => {
-      // console.log(groupUser)
-      const {wxid, nickname, isMember, isAdmin, joinTime, lastActive, leaveTime, skipChatRank} = groupUser;
-
-      let row = tbody.insertRow(i);
-      // Insert data into cells
-      row.insertCell(0).innerHTML = wxid;
-      row.insertCell(1).innerHTML = nickname;
-      row.insertCell(2).innerHTML = `<span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${isMember ? 'bg-green-50 text-green-700 ring-green-600/20' : 'bg-red-50 text-red-700 ring-red-600/20'}">${isMember ? '是' : '否'}</span>`;
-      row.insertCell(3).innerHTML = `<span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${isAdmin ? 'bg-green-50 text-green-700 ring-green-600/20' : 'bg-red-50 text-red-700 ring-red-600/20'}">${isAdmin ? '是' : '否'}</span>`;
-      row.insertCell(4).innerHTML = joinTime;
-      row.insertCell(5).innerHTML = lastActive;
-      row.insertCell(6).innerHTML = leaveTime;
-      // row.insertCell(7).innerHTML = `<input type="checkbox" class="toggle toggle-error" ${skipChatRank ? 'checked' : ''} onclick="changeUserGroupRankSkipStatus('${groupId}', '${wxid}')" />`;
-      row.insertCell(7).innerHTML = `<span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${skipChatRank ? 'bg-green-50 text-green-700 ring-green-600/20' : 'bg-red-50 text-red-700 ring-red-600/20'}">${skipChatRank ? '是' : '否'}</span>`;
-    });
-  }).catch(function (error) {
-    console.log(`错误信息: ${error}`);
-  }).finally(function () {
-    // 隐藏加载框
-    // loading.style.display = "none"
-    groupNameTag.innerHTML = groupName
-  })
-}
-
-// AI模型变动
-function aiModelChange(event, wxid) {
-  // 取出变动后的值
-  const modelStr = event.target.value;
-  console.log("AI模型变动: ", wxid, modelStr)
-  axios({
-    method: 'post',
-    url: '/api/ai/model',
-    data: {
-      wxid: wxid,
-      model: modelStr
-    }
-  }).then(function (response) {
-    console.log(`返回结果: ${JSON.stringify(response)}`);
-    alert(`${response.data}`)
-  }).catch(function (error) {
-    console.log(`错误信息: ${error}`);
-    alert("修改失败")
-  }).finally(function () {
-    window.location.reload();
-  })
-}
-
-// AI角色变动
-function aiAssistantChange(event, wxid) {
-  // 取出变动后的值
-  const assistantStr = event.target.value;
-  console.log("AI角色变动: ", wxid, assistantStr)
-  axios({
-    method: 'post',
-    url: '/api/ai/assistant',
-    data: {
-      wxid: wxid,
-      model: assistantStr
-    }
-  }).then(function (response) {
-    console.log(`返回结果: ${JSON.stringify(response)}`);
-    alert(`${response.data}`)
-  }).catch(function (error) {
-    console.log(`错误信息: ${error}`);
-    alert("修改失败")
-  }).finally(function () {
-    window.location.reload();
-  })
-}
-
-// 修改清理群成员值
-function changeClearMember(wxid, oldVal, newVal) {
-  oldVal = Number(oldVal)
-  newVal = Number(newVal)
-
-  if (oldVal === newVal) {
-    return
+  try {
+    await loadGroupUsers(groupId, groupName)
+  } catch (error) {
+    console.error(error)
+    document.getElementById("groupUserModalName").textContent = groupName
+    document.getElementById("groupUserCount").textContent = "成员加载失败"
   }
-  if (newVal < 0) {
-    alert('不活跃天数的值不能小于0')
-  }
-  // 请求接口
-  axios({
-    method: 'put',
-    url: '/api/clearmembers',
-    data: {
-      wxid: wxid,
-      days: Number(newVal)
-    }
-  }).then(function (response) {
-    console.log(`返回结果: ${JSON.stringify(response)}`);
-    alert(`${response.data}`)
-  }).catch(function (error) {
-    console.log(`错误信息: ${error}`);
-    alert("修改失败")
-  }).finally(function () {
-    window.location.reload();
-  })
-}
-
-// 修改每日免费 AI 对话次数
-function changeAiFreeLimit(wxid, limitNumber) {
-  limitNumber = Number(limitNumber)
-
-  if (limitNumber < 0) {
-    alert('值不能小于0')
-  }
-  // 请求接口
-  axios({
-    method: 'post',
-    url: '/api/ai/free',
-    data: {
-      wxid: wxid,
-      days: Number(limitNumber)
-    }
-  }).then(function (response) {
-    console.log(`返回结果: ${JSON.stringify(response)}`);
-    alert(`${response.data}`)
-  }).catch(function (error) {
-    console.log(`错误信息: ${error}`);
-    alert("修改失败")
-  }).finally(function () {
-    window.location.reload();
-  })
-}
-
-// 发送AI群聊总结
-function sendAiSummary(wxid) {
-  if (wxid === '') {
-    alert("wxid不能为空")
-    return
-  }
-  if (!confirm("确定发送AI群聊总结吗?")) {
-    return
-  }
-  // 请求接口
-  axios({
-    method: 'post',
-    url: '/api/ai/summary',
-    params: {
-      id: wxid,
-    }
-  }).then(function (response) {
-    console.log(`返回结果: ${JSON.stringify(response)}`);
-    alert(`${response.data}`)
-  }).catch(function (error) {
-    console.log(`错误信息: ${error}`);
-    alert(`${response.data}`)
-  }).finally(function () {
-    window.location.reload();
-  })
 }

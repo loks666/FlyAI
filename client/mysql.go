@@ -1,7 +1,7 @@
 package client
 
 import (
-	"go-wechat/config"
+	"github.com/loks666/FlyAI/config"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"

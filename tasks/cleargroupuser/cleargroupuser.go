@@ -2,11 +2,11 @@ package cleargroupuser
 
 import (
 	"fmt"
-	"go-wechat/client"
-	"go-wechat/common/current"
-	"go-wechat/model/entity"
-	"go-wechat/service"
-	"go-wechat/utils"
+	"github.com/loks666/FlyAI/client"
+	"github.com/loks666/FlyAI/common/current"
+	"github.com/loks666/FlyAI/model/entity"
+	"github.com/loks666/FlyAI/service"
+	"github.com/loks666/FlyAI/utils"
 	"log"
 	"strings"
 )

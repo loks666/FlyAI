@@ -1,9 +1,9 @@
 package service
 
 import (
-	"go-wechat/client"
-	"go-wechat/model/entity"
-	"go-wechat/model/vo"
+	"github.com/loks666/FlyAI/client"
+	"github.com/loks666/FlyAI/model/entity"
+	"github.com/loks666/FlyAI/model/vo"
 	"gorm.io/gorm"
 	"log"
 	"strings"
@@ -47,11 +47,39 @@ func GetFriendInfoById(wxId string) (ent entity.Friend, err error) {
 	return
 }
 
+// GetAllEnableMonitorGroups returns groups explicitly selected for monitoring.
+func GetAllEnableMonitorGroups() (records []entity.Friend, err error) {
+	err = client.MySQL.
+		Where("enable_monitor = ?", 1).
+		Where("is_ok IS TRUE").
+		Where("wxid LIKE '%@chatroom'").
+		Find(&records).Error
+	return
+}
+
+// IsGroupMonitorEnabled is the final guard before any group message plugin runs.
+func IsGroupMonitorEnabled(wxId string) bool {
+	var count int64
+	client.MySQL.Model(&entity.Friend{}).
+		Where("wxid = ?", wxId).
+		Where("enable_monitor = ?", 1).
+		Where("is_ok IS TRUE").
+		Count(&count)
+	return count > 0
+}
+
+func withGroupMonitorScope(tx *gorm.DB) *gorm.DB {
+	return tx.Where("(wxid NOT LIKE '%@chatroom' OR enable_monitor = ?)", 1)
+}
+
 // GetAllEnableAI
 // @description: 取出所有启用了AI的好友或群组
 // @return []entity.Friend
 func GetAllEnableAI() (records []entity.Friend, err error) {
-	err = client.MySQL.Where("enable_ai = ?", 1).Where("is_ok IS TRUE").Find(&records).Error
+	err = withGroupMonitorScope(client.MySQL).
+		Where("enable_ai = ?", 1).
+		Where("is_ok IS TRUE").
+		Find(&records).Error
 	return
 }
 
@@ -61,6 +89,7 @@ func GetAllEnableAI() (records []entity.Friend, err error) {
 // @return err
 func GetAllEnableChatRank() (records []entity.Friend, err error) {
 	err = client.MySQL.Where("enable_chat_rank = ?", 1).
+		Where("enable_monitor = ?", 1).
 		Where("is_ok IS TRUE").
 		Where("wxid LIKE '%@chatroom'").
 		Find(&records).Error
@@ -73,6 +102,7 @@ func GetAllEnableChatRank() (records []entity.Friend, err error) {
 // @return err
 func GetAllEnableSummary() (records []entity.Friend, err error) {
 	err = client.MySQL.Where("enable_summary = ?", 1).
+		Where("enable_monitor = ?", 1).
 		Where("is_ok IS TRUE").
 		Where("wxid LIKE '%@chatroom'").
 		Find(&records).Error
@@ -84,7 +114,21 @@ func GetAllEnableSummary() (records []entity.Friend, err error) {
 // @return records
 // @return err
 func GetAllEnableNews() (records []entity.Friend, err error) {
-	err = client.MySQL.Where("enable_news = ?", 1).Where("is_ok IS TRUE").Find(&records).Error
+	err = withGroupMonitorScope(client.MySQL).
+		Where("enable_news = ?", 1).
+		Where("is_ok IS TRUE").
+		Find(&records).Error
+	return
+}
+
+// GetAllEnableDormant returns monitored groups selected for dormant-member reports.
+func GetAllEnableDormant() (records []entity.Friend, err error) {
+	err = client.MySQL.
+		Where("enable_dormant = ?", 1).
+		Where("enable_monitor = ?", 1).
+		Where("is_ok IS TRUE").
+		Where("wxid LIKE '%@chatroom'").
+		Find(&records).Error
 	return
 }
 
@@ -93,7 +137,10 @@ func GetAllEnableNews() (records []entity.Friend, err error) {
 // @return records
 // @return err
 func GetAllEnableHotTop() (records []entity.Friend, err error) {
-	err = client.MySQL.Where("enable_hot_top = ?", 1).Where("is_ok IS TRUE").Find(&records).Error
+	err = withGroupMonitorScope(client.MySQL).
+		Where("enable_hot_top = ?", 1).
+		Where("is_ok IS TRUE").
+		Find(&records).Error
 	return
 }
 
@@ -102,7 +149,11 @@ func GetAllEnableHotTop() (records []entity.Friend, err error) {
 // @return records
 // @return err
 func GetAllEnableClearGroup() (records []entity.Friend, err error) {
-	err = client.MySQL.Where("clear_member > 0").Where("is_ok IS TRUE").Find(&records).Error
+	err = client.MySQL.
+		Where("clear_member > 0").
+		Where("enable_monitor = ?", 1).
+		Where("is_ok IS TRUE").
+		Find(&records).Error
 	return
 }
 

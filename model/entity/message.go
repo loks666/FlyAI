@@ -1,7 +1,7 @@
 package entity
 
 import (
-	"go-wechat/types"
+	"github.com/loks666/FlyAI/types"
 	"time"
 )
 

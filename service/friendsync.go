@@ -1,19 +1,34 @@
 package service
 
 import (
-	"go-wechat/client"
-	"go-wechat/common/types"
-	"go-wechat/config"
-	"go-wechat/model/entity"
-	"go-wechat/utils"
+	"github.com/loks666/FlyAI/client"
+	"github.com/loks666/FlyAI/common/types"
+	"github.com/loks666/FlyAI/config"
+	"github.com/loks666/FlyAI/model/entity"
+	"github.com/loks666/FlyAI/utils"
 	"log"
 	"strings"
+	"sync"
 	"time"
 )
+
+var syncFriendLock sync.Mutex
 
 // SyncFriend
 // @description: 同步好友列表
 func SyncFriend() {
+	syncFriend(true)
+}
+
+// SyncFriendCatalog refreshes contacts without sending introductions or notifications.
+func SyncFriendCatalog() {
+	syncFriend(false)
+}
+
+func syncFriend(announce bool) {
+	syncFriendLock.Lock()
+	defer syncFriendLock.Unlock()
+
 	// 获取好友列表
 	friends, err := utils.GetFriendList()
 	if err != nil {
@@ -64,7 +79,7 @@ func SyncFriend() {
 			}
 
 			// 如果已存在但是是已退出的群，也通知一下
-			if !oldMap[item.Wxid] {
+			if !oldMap[item.Wxid] && announce {
 				notifyMap[item.Wxid] = item.Nickname + " #秽土转生"
 
 				// 通知一下，初始化完成
@@ -113,8 +128,10 @@ func SyncFriend() {
 				log.Printf("新增好友失败: %s", err.Error())
 				continue
 			}
-			notifyMap[item.Wxid] = item.Nickname
-			if conf, e := config.Conf.Resource["introduce"]; e {
+			if announce {
+				notifyMap[item.Wxid] = item.Nickname
+			}
+			if conf, e := config.Conf.Resource["introduce"]; e && announce {
 				// 发送一条新消息
 				switch conf.Type {
 				case "text":
@@ -129,7 +146,7 @@ func SyncFriend() {
 				}
 			}
 			// 发送配置网页
-			if config.Conf.System.Domain != "" {
+			if config.Conf.System.Domain != "" && announce {
 				title := "欢迎使用微信机器人(切勿转发)"
 				desc := "点我可以配置功能喔，提示非微信官方网页，点击继续访问即可"
 				url := utils.GetManagerUrl(item.Wxid)
@@ -139,7 +156,7 @@ func SyncFriend() {
 	}
 
 	// 通知有新成员
-	if len(notifyMap) > 0 && config.Conf.System.NewFriendNotify.Enable {
+	if announce && len(notifyMap) > 0 && config.Conf.System.NewFriendNotify.Enable {
 		// 组装成一句话
 		msg := []string{"#新好友通知\n"}
 		for wxId, nickname := range notifyMap {
@@ -168,8 +185,8 @@ func SyncFriend() {
 // SyncGroupMembers
 // @description: 同步群成员
 // @param wxId
-func SyncGroupMembers(wxId string) {
-	membersIds, admin, err := utils.GetGroupMembers(wxId)
+func SyncGroupMembers(wxId string) (err error) {
+	membersIds, memberNicknames, admin, err := utils.GetGroupMembers(wxId)
 	if err != nil {
 		return
 	}
@@ -206,24 +223,44 @@ func SyncGroupMembers(wxId string) {
 
 	// 循环获取到的群成员列表
 	for _, wxid := range membersIds {
-		// 如果历史数据中存在，且是成员，跳过
+		preferredNickname := memberNicknames[wxid]
+		// 已存在的成员也要刷新群内昵称，避免长期保留旧的个人昵称。
 		if isMember, ok := oldMap[wxid]; ok && isMember {
+			updates := map[string]any{"is_admin": wxid == admin}
+			if preferredNickname != "" {
+				updates["nickname"] = preferredNickname
+			}
+			if err = client.MySQL.Model(&entity.GroupUser{}).
+				Where("group_id = ?", wxId).
+				Where("wxid = ?", wxid).
+				Updates(updates).Error; err != nil {
+				log.Printf("刷新群成员昵称失败: %s", err.Error())
+			}
 			continue
 		}
 		// 获取成员信息
 		cp, e := utils.GetContactProfile(wxid)
 		if e != nil {
-			log.Printf("获取成员信息失败: %s", e.Error())
-			continue
+			log.Printf("获取成员[%s]详细信息失败，使用群成员Id占位: %s", wxid, e.Error())
+		}
+		if cp.Wxid == "" {
+			cp.Wxid = wxid
 		}
 		if cp.Wxid != "" {
+			nickname := preferredNickname
+			if nickname == "" {
+				nickname = cp.Nickname
+			}
+			if nickname == "" {
+				nickname = wxid
+			}
 			if _, ok := oldMap[wxid]; ok {
 				// 历史数据中存在，修改
 				// 修改
 				gupm := map[string]any{
 					"account":    cp.Account,
 					"head_image": cp.HeadImage,
-					"nickname":   cp.Nickname,
+					"nickname":   nickname,
 					"is_member":  true,
 					"is_admin":   cp.Wxid == admin,
 					"leave_time": nil,
@@ -240,7 +277,7 @@ func SyncGroupMembers(wxId string) {
 					GroupId:    wxId,
 					Account:    cp.Account,
 					HeadImage:  cp.HeadImage,
-					Nickname:   cp.Nickname,
+					Nickname:   nickname,
 					Wxid:       cp.Wxid,
 					IsMember:   true,
 					IsAdmin:    cp.Wxid == admin,
@@ -254,4 +291,5 @@ func SyncGroupMembers(wxId string) {
 			}
 		}
 	}
+	return nil
 }

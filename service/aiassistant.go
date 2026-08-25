@@ -1,8 +1,8 @@
 package service
 
 import (
-	"go-wechat/client"
-	"go-wechat/model/entity"
+	"github.com/loks666/FlyAI/client"
+	"github.com/loks666/FlyAI/model/entity"
 )
 
 // GetAllAiAssistant

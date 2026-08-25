@@ -2,20 +2,17 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
-	"go-wechat/config"
-	"go-wechat/initialization"
-	"go-wechat/mq"
-	"go-wechat/router"
-	"go-wechat/tasks"
-	"go-wechat/tcpserver"
-	"go-wechat/utils"
+	"github.com/loks666/FlyAI/initialization"
+	"github.com/loks666/FlyAI/mq"
+	"github.com/loks666/FlyAI/router"
+	"github.com/loks666/FlyAI/tasks"
+	"github.com/loks666/FlyAI/tcpserver"
 	"html/template"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
-	"time"
 )
 
 func init() {
@@ -34,13 +31,6 @@ func init() {
 }
 
 func main() {
-	// 如果启用了自动配置回调，就设置一下
-	if config.Conf.Wechat.AutoSetCallback {
-		utils.ClearCallback()
-		time.Sleep(500 * time.Millisecond) // 休眠五百毫秒再设置
-		utils.SetCallback(config.Conf.Wechat.Callback)
-	}
-
 	// 启动TCP服务
 	go tcpserver.Start()
 
@@ -52,13 +42,15 @@ func main() {
 		"codeToChinese": func(code string) string {
 			switch code {
 			case "friend":
-				return "好友列表"
+				return "通讯录"
 			case "group":
 				return "群组列表"
 			case "index":
 				return "首页"
 			case "assistant":
 				return "AI角色"
+			case "settings":
+				return "功能配置"
 			default:
 				return "其他页面"
 			}
@@ -92,7 +84,11 @@ func main() {
 	})
 	// 初始化路由
 	router.Init(app)
-	if err := app.Run(":8080"); err != nil {
+	httpPort := os.Getenv("HUB_HTTP_PORT")
+	if _, err := strconv.Atoi(httpPort); err != nil {
+		httpPort = "8080"
+	}
+	if err := app.Run("127.0.0.1:" + httpPort); err != nil {
 		log.Panicf("服务启动失败：%v", err)
 	}
 }

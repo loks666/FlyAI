@@ -2,7 +2,7 @@ package command
 
 import (
 	"github.com/go-resty/resty/v2"
-	"go-wechat/utils"
+	"github.com/loks666/FlyAI/utils"
 	"log"
 	"net/http"
 )

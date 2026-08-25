@@ -1,17 +1,14 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full bg-gray-100">
+<html lang="zh-CN" class="h-full bg-gray-100">
 
 <head>
   <meta charset="UTF-8">
-  <title>水群助手</title>
-
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>群聊管理 - FlyAI</title>
   <link href="assets/css/daisyui-4.4.14-full.min.css" rel="stylesheet" type="text/css"/>
   <link href="assets/css/index.css" rel="stylesheet" type="text/css"/>
-
   <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp"></script>
-  <script src="https://cdn.bootcdn.net/ajax/libs/axios/1.5.0/axios.min.js"></script>
-
-  <script src="assets/js/index.js"></script>
+  <script defer src="assets/js/index.js?v=20260825-list-1"></script>
 </head>
 
 <body class="h-full">
@@ -20,166 +17,133 @@
 
   <main class="-mt-32">
     <div class="mx-auto max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
-      <div class="rounded-lg bg-white px-5 py-6 shadow sm:px-6 text-2xl">
-        <ul role="list" class="grid grid-cols-1 gap-x-6 gap-y-8 lg:grid-cols-2 xl:gap-x-8">
-          {{ range .groups }}
-          <li class="overflow-hidden rounded-xl border border-gray-200">
-            <div class="flex items -center gap-x-4 border-b border-gray-900/5 bg-gray-50 p-6">
-              <img src="assets/img/status-{{ if eq .IsOk true }}ok{{else}}fail{{end}}.png" alt="Tuple"
-                   class="h-12 w-12 flex-none rounded-lg bg-white object-cover ring-1 ring-gray-900/10">
-              <div class="text-sm flex-1">
-                <div class="font-medium leading-6 text-gray-900">{{ .Nickname }}</div>
-                <div class="font-medium text-gray-500">{{ .Wxid }}</div>
-                {{ template "flagTag" .IsOk }}
-                <button type="button" class="btn-link float-end text-red-600" onclick="getGroupUsers({{.Wxid}}, {{.Nickname}})">群成员</button>
-              </div>
-            </div>
+      <section class="overflow-hidden rounded-xl bg-white shadow">
+        <div class="flex flex-col gap-3 border-b border-gray-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 class="text-sm font-semibold text-gray-900">群聊功能管理</h2>
+            <p class="mt-0.5 text-xs text-gray-500">开关控制自动投送；主人群聊命令可独立执行。</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2 sm:justify-end">
+            <button type="button"
+                    class="whitespace-nowrap rounded-lg border border-green-200 bg-white px-3 py-2 text-xs font-semibold text-green-700 shadow-sm transition hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    data-testid="sync-wechat"
+                    onclick="syncWechatCatalog()">同步微信数据</button>
+            <button type="button"
+                    class="whitespace-nowrap rounded-lg bg-green-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-green-500 disabled:cursor-not-allowed disabled:opacity-50"
+                    data-testid="send-all-weekly"
+                    onclick="sendAllWeeklyRanks()">发送全部周报</button>
+          </div>
+        </div>
 
-            <dl class="-my-3 divide-y divide-gray-100 px-6 py-4 text-sm leading-6">
-              <!-- 最后活跃时间 -->
-              <div class="flex justify-between gap-x-4 py-3 items-center">
-                <dt class="text-gray-500">最后活跃时间</dt>
-                <dd class="flex items-start gap-x-2">
-                  {{ if eq .LastActive.IsNil true }}
-                  无活跃数据
-                  {{ else }}
-                  <time datetime="{{ .LastActive }}">{{ .LastActive }}</time>
-                  {{ end }}
-                </dd>
-              </div>
-              <!-- AI -->
-              <div class="flex justify-between gap-x-4 py-3 items-center">
-                <dt class="text-gray-500">AI(模型可选默认或者指定模型)</dt>
-                <dd class="flex items-start gap-x-2 items-center">
-                  <div>
-                    {{ template "ai" . }}
-                  </div>
-                  {{ if eq .EnableAi true }}
-                  <div class="float-end">
-                    <!-- 模型 -->
-                    <div>
-                      <label>
-                        <select class="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-green-600 sm:text-sm sm:leading-6" onchange="aiModelChange(event, {{.Wxid}})">
-                          {{$useModel := .AiModel}}
-                          {{ range $.aiModels }}
-                          <option value="{{.Model}}" {{ if eq $useModel .Model}}selected{{ end }}>
-                            {{.Name}}
-                          </option>
-                          {{ end }}
-                        </select>
-                      </label>
-                    </div>
-                    <!-- AI角色 -->
-                    <div class="float-end mt-1">
-                      <label>
-                        <select
-                          class="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-green-600 sm:text-sm sm:leading-6"
-                          onchange="aiAssistantChange(event, {{.Wxid}})">
-                          <option value="" {{ if eq .Prompt "" }}selected{{ end }}>默认</option>
+        <div class="mx-5 mt-4 hidden rounded-lg px-4 py-3 text-sm" data-testid="page-action-status" aria-live="polite"></div>
 
-                          {{$usePrompt := .Prompt}}
-                          {{ range $.assistant }}
-                          <option value="{{.Id}}" {{ if eq $usePrompt .Id}}selected{{ end }}>
-                            {{.Name}}
-                          </option>
-                          {{ end }}
-                        </select>
-                      </label>
+        <div class="overflow-x-auto" data-testid="group-list">
+          <table class="w-full min-w-[1080px] table-fixed text-left text-sm">
+            <thead class="border-b border-gray-200 bg-gray-50/80 text-xs text-gray-500">
+            <tr>
+              <th scope="col" class="w-[300px] px-5 py-3 font-medium">群聊</th>
+              <th scope="col" class="w-[155px] px-3 py-3 font-medium">最近活跃</th>
+              <th scope="col" class="w-[78px] px-3 py-3 text-center font-medium">监控</th>
+              <th scope="col" class="w-[145px] px-3 py-3 text-center font-medium">
+                <span class="block text-gray-700">周报</span>
+                <span class="mt-0.5 block font-normal text-gray-400">{{.weeklyScheduleLabel}} {{.weeklyTime}}</span>
+              </th>
+              <th scope="col" class="w-[145px] px-3 py-3 text-center font-medium">
+                <span class="block text-gray-700">热点</span>
+                <span class="mt-0.5 block font-normal text-gray-400">{{.newsScheduleLabel}} {{.newsTime}}</span>
+              </th>
+              <th scope="col" class="w-[145px] px-3 py-3 text-center font-medium">
+                <span class="block text-gray-700">潜水</span>
+                <span class="mt-0.5 block font-normal text-gray-400">少于 {{.dormantThreshold}} 条</span>
+              </th>
+              <th scope="col" class="w-[82px] px-3 py-3 text-center font-medium">成员</th>
+            </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 bg-white">
+            {{ range .groups }}
+            <tr class="group transition-colors hover:bg-green-50/30" data-testid="group-row-{{.Wxid}}">
+              <td class="px-5 py-3">
+                <div class="flex min-w-0 items-center gap-3">
+                  <img src="assets/img/status-{{ if eq .IsOk true }}ok{{else}}fail{{end}}.png" alt=""
+                       class="h-9 w-9 flex-none rounded-lg bg-white object-cover ring-1 ring-gray-900/10">
+                  <div class="min-w-0">
+                    <div class="flex items-center gap-2">
+                      <span class="truncate font-semibold text-gray-900">{{.Nickname}}</span>
+                      <span class="h-1.5 w-1.5 flex-none rounded-full {{if eq .IsOk true}}bg-green-500{{else}}bg-red-500{{end}}" title="{{if eq .IsOk true}}在通讯录{{else}}不在通讯录{{end}}"></span>
                     </div>
+                    <div class="mt-0.5 truncate text-xs text-gray-400">{{.Wxid}}</div>
                   </div>
-                  {{ end }}
-                </dd>
-              </div>
-              <!-- 每日 AI 免费次数限制 -->
-              <div class="flex justify-between gap-x-4 py-3 items-center">
-                <dt class="text-gray-500">
-                  每日 AI 免费次数限制
-                  <span class="text-red-300">(0表示不限)</span>
-                </dt>
-                <dd class="flex items-start gap-x-2 items-center">
-                  <div class="relative rounded-md">
-                    <label>
-                      <input type="number" id="auto-ai-{{ .Wxid }}" min="0" class="block w-1/2 float-end rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" placeholder="每日 AI 免费次数限制"
-                             value="{{.AiFreeLimit}}"
-                             onblur="changeAiFreeLimit({{.Wxid}}, this.value)"
-                      >
-                    </label>
-                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-                      <span class="text-gray-500 sm:text-sm" id="price-currency">次</span>
-                    </div>
-                  </div>
-                </dd>
-              </div>
-              <!-- 水群排行榜 -->
-              <div class="flex justify-between gap-x-4 py-3 items-center">
-                <dt class="text-gray-500">水群排行榜</dt>
-                <dd class="flex items-start gap-x-2">
-                  {{ template "chatRank" . }}
-                </dd>
-              </div>
-              <!-- 群聊总结 -->
-              <div class="flex justify-between gap-x-4 py-3 items-center">
-                <dt class="text-gray-500">群聊总结</dt>
-                <dd class="flex items-start gap-x-2">
-                  {{ template "summary" . }}
-                </dd>
-              </div>
-              <!-- 迎新 -->
-              <div class="flex justify-between gap-x-4 py-3 items-center">
-                <dt class="text-gray-500">迎新</dt>
-                <dd class="flex items-start gap-x-2">
-                  {{ template "welcome" . }}
-                </dd>
-              </div>
-              <!-- 早报 -->
-              <div class="flex justify-between gap-x-4 py-3 items-center">
-                <dt class="text-gray-500">早报</dt>
-                <dd class="flex items-start gap-x-2">
-                  {{ template "news" . }}
-                </dd>
-              </div>
-              <!-- 热榜 -->
-              <div class="flex justify-between gap-x-4 py-3 items-center">
-                <dt class="text-gray-500">热榜</dt>
-                <dd class="flex items-start gap-x-2">
-                  {{ template "hotTop" . }}
-                </dd>
-              </div>
-              <!-- 指令 -->
-              <div class="flex justify-between gap-x-4 py-3 items-center">
-                <dt class="text-gray-500">指令</dt>
-                <dd class="flex items-start gap-x-2">
-                  {{ template "command" . }}
-                </dd>
-              </div>
-              <!-- 自动清理不活跃成员 -->
-              <div class="flex justify-between gap-x-4 py-3 items-center">
-                <dt class="text-gray-500">末位淘汰</dt>
-                <dd class="flex items-start gap-x-2 items-center">
-                  <div class="relative rounded-md">
-                    <label>
-                      <input type="number" id="auto-cm-{{ .Wxid }}" min="0" class="block w-1/2 float-end rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" placeholder="N天不活跃自动移除"
-                             value="{{.ClearMember}}"
-                             onblur="changeClearMember({{.Wxid}}, {{.ClearMember}}, this.value)"
-                      >
-                    </label>
-                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-                      <span class="text-gray-500 sm:text-sm" id="price-currency">天</span>
-                    </div>
-                  </div>
-                </dd>
-              </div>
-            </dl>
-          </li>
-          {{ end }}
-        </ul>
-      </div>
+                </div>
+              </td>
+              <td class="px-3 py-3 text-xs text-gray-500">
+                {{if eq .LastActive.IsNil true}}
+                无活跃数据
+                {{else}}
+                <time datetime="{{.LastActive}}">{{.LastActive}}</time>
+                {{end}}
+              </td>
+              <td class="px-3 py-3 text-center">{{template "monitor" .}}</td>
+              <td class="px-3 py-3">
+                <div class="flex items-center justify-center gap-2">
+                  {{template "chatRank" .}}
+                  {{if eq .EnableChatRank true}}
+                  <button type="button"
+                          class="whitespace-nowrap rounded-md border border-green-200 bg-white px-2 py-1 text-[11px] font-semibold text-green-700 transition hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-50"
+                          data-testid="send-weekly-{{.Wxid}}" data-wxid="{{.Wxid}}"
+                          onclick="sendWeeklyRank(this)">发送</button>
+                  {{end}}
+                </div>
+                <span class="mt-1 hidden text-center text-[11px]" data-testid="weekly-status-{{.Wxid}}" aria-live="polite"></span>
+              </td>
+              <td class="px-3 py-3">
+                <div class="flex items-center justify-center gap-2">
+                  {{template "news" .}}
+                  {{if eq .EnableNews true}}
+                  <button type="button"
+                          class="whitespace-nowrap rounded-md border border-green-200 bg-white px-2 py-1 text-[11px] font-semibold text-green-700 transition hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-50"
+                          data-testid="send-ai-news-{{.Wxid}}" data-wxid="{{.Wxid}}"
+                          onclick="sendAINews(this)">发送</button>
+                  {{end}}
+                </div>
+                <span class="mt-1 hidden text-center text-[11px]" data-testid="ai-news-status-{{.Wxid}}" aria-live="polite"></span>
+              </td>
+              <td class="px-3 py-3">
+                <div class="flex items-center justify-center gap-2">
+                  {{template "dormant" .}}
+                  {{if eq .EnableDormant true}}
+                  <button type="button"
+                          class="whitespace-nowrap rounded-md border border-green-200 bg-white px-2 py-1 text-[11px] font-semibold text-green-700 transition hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-50"
+                          data-testid="send-dormant-{{.Wxid}}" data-wxid="{{.Wxid}}"
+                          onclick="sendDormantReport(this)">发送</button>
+                  {{end}}
+                </div>
+                <span class="mt-1 hidden text-center text-[11px]" data-testid="dormant-status-{{.Wxid}}" aria-live="polite"></span>
+              </td>
+              <td class="px-3 py-3 text-center">
+                {{if eq .EnableMonitor true}}
+                <button type="button"
+                        class="whitespace-nowrap rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-600 transition hover:border-green-200 hover:text-green-700"
+                        data-group-id="{{.Wxid}}" data-group-name="{{.Nickname}}"
+                        onclick="getGroupUsers(this.dataset.groupId, this.dataset.groupName)">查看</button>
+                {{else}}
+                <span class="text-gray-300">—</span>
+                {{end}}
+              </td>
+            </tr>
+            {{end}}
+            </tbody>
+          </table>
+        </div>
+
+        {{if not .groups}}
+        <div class="px-6 py-16 text-center text-sm text-gray-500">通讯录中暂未发现群聊，请先同步微信数据。</div>
+        {{end}}
+      </section>
     </div>
   </main>
 
-  {{ template "footer.html" }}
-
-  {{ template "groupuser.html" }}
+  {{template "footer.html"}}
+  {{template "groupuser.html"}}
 </div>
-
 </body>
+</html>

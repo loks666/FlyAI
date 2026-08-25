@@ -2,8 +2,9 @@ package app
 
 import (
 	"github.com/gin-gonic/gin"
-	"go-wechat/client"
-	"go-wechat/model/entity"
+	"github.com/loks666/FlyAI/client"
+	"github.com/loks666/FlyAI/model/entity"
+	"github.com/loks666/FlyAI/service"
 	"gorm.io/gorm"
 	"log"
 	"net/http"
@@ -28,6 +29,49 @@ type changeUseAiModelParam struct {
 type autoClearMembers struct {
 	WxId string `json:"wxid" binding:"required"` // 群Id
 	Days int    `json:"days"`                    // 多少天未发言
+}
+
+// ChangeEnableMonitorStatus toggles the master switch for all group features.
+func ChangeEnableMonitorStatus(ctx *gin.Context) {
+	var p changeStatusParam
+	if err := ctx.ShouldBindJSON(&p); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"message": "参数错误"})
+		return
+	}
+
+	var record entity.Friend
+	if err := client.MySQL.Select("wxid", "enable_monitor").
+		Where("wxid = ?", p.WxId).
+		Where("wxid LIKE '%@chatroom'").
+		First(&record).Error; err != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"message": "群聊不存在"})
+		return
+	}
+
+	enabled := !record.EnableMonitor
+	if err := client.MySQL.Model(&entity.Friend{}).
+		Where("wxid = ?", p.WxId).
+		Update("enable_monitor", enabled).Error; err != nil {
+		log.Printf("修改群监控状态失败：%s", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "操作失败"})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"enabled": enabled})
+}
+
+// GetEnableMonitorGroups is consumed by the local WeChat database bridge.
+func GetEnableMonitorGroups(ctx *gin.Context) {
+	records, err := service.GetAllEnableMonitorGroups()
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "获取监控群失败"})
+		return
+	}
+	groups := make([]string, 0, len(records))
+	for _, record := range records {
+		groups = append(groups, record.Wxid)
+	}
+	ctx.JSON(http.StatusOK, gin.H{"groups": groups})
 }
 
 // ChangeEnableAiStatus
@@ -218,21 +262,29 @@ func ChangeSkipGroupRankStatus(ctx *gin.Context) {
 func ChangeEnableNewsStatus(ctx *gin.Context) {
 	var p changeStatusParam
 	if err := ctx.ShouldBindJSON(&p); err != nil {
-		ctx.String(http.StatusBadRequest, "参数错误")
+		ctx.JSON(http.StatusBadRequest, gin.H{"message": "参数错误"})
 		return
 	}
-	log.Printf("待修改的Id：%s", p.WxId)
+	var record entity.Friend
+	if err := client.MySQL.Select("wxid", "enable_news").
+		Where("wxid = ?", p.WxId).
+		Where("wxid LIKE '%@chatroom'").
+		First(&record).Error; err != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"message": "群聊不存在"})
+		return
+	}
 
+	enabled := !record.EnableNews
 	err := client.MySQL.Model(&entity.Friend{}).
 		Where("wxid = ?", p.WxId).
-		Update("`enable_news`", gorm.Expr(" !`enable_news`")).Error
+		Update("enable_news", enabled).Error
 	if err != nil {
 		log.Printf("修改早报启用状态失败：%s", err)
-		ctx.String(http.StatusInternalServerError, "操作失败: %s", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "操作失败"})
 		return
 	}
 
-	ctx.String(http.StatusOK, "操作成功")
+	ctx.JSON(http.StatusOK, gin.H{"enabled": enabled})
 }
 
 // ChangeEnableHotTopStatus

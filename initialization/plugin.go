@@ -1,11 +1,12 @@
 package initialization
 
 import (
-	"go-wechat/common/current"
-	"go-wechat/model/dto"
-	plugin "go-wechat/plugin"
-	"go-wechat/plugin/plugins"
-	"go-wechat/service"
+	"github.com/loks666/FlyAI/common/current"
+	"github.com/loks666/FlyAI/model/dto"
+	plugin "github.com/loks666/FlyAI/plugin"
+	"github.com/loks666/FlyAI/plugin/plugins"
+	"github.com/loks666/FlyAI/service"
+	"github.com/loks666/FlyAI/types"
 )
 
 // Plugin
@@ -39,15 +40,18 @@ func Plugin() {
 
 	// 私聊指令消息
 	dispatcher.RegisterHandler(func(m *dto.Message) bool {
-		// 私聊消息 或 群聊艾特机器人并且以/开头的消息
-		isGroupAt := m.IsAt() && !m.IsAtAll()
-		return (m.IsPrivateText() || isGroupAt) && m.CleanContentStartWith("/") && service.CheckIsEnableCommand(m.FromUser)
+		return m.IsGroup() && m.Type == types.MsgTypeText && service.IsOwnerWxid(m.GroupUser) && ownerCommandMatches(m)
+	}, plugins.OwnerCommand)
+
+	// 普通指令只允许私聊；群聊仅开放绑定主人的三个固定命令。
+	dispatcher.RegisterHandler(func(m *dto.Message) bool {
+		return m.IsPrivateText() && m.CleanContentStartWith("/") && service.CheckIsEnableCommand(m.FromUser)
 	}, plugins.Command)
 
 	// AI消息插件
 	dispatcher.RegisterHandler(func(m *dto.Message) bool {
-		// 群内@或者私聊文字消息
-		return (m.IsAt() && !m.IsAtAll()) || m.IsPrivateText()
+		// AI 尚未接入群主人命令；普通群消息不触发 AI。
+		return m.IsPrivateText()
 	}, plugins.AI)
 
 	// 欢迎新成员
@@ -56,5 +60,20 @@ func Plugin() {
 	}, plugins.WelcomeNew)
 
 	// 注册消息处理器
-	current.SetRobotMessageHandler(plugin.DispatchMessage(dispatcher))
+	handler := plugin.DispatchMessage(dispatcher)
+	current.SetRobotMessageHandler(func(message *dto.Message) {
+		if message.IsBackfill {
+			plugins.SaveDTOToDb(message)
+			return
+		}
+		if message.IsGroup() && !service.IsGroupMonitorEnabled(message.FromUser) {
+			return
+		}
+		handler(message)
+	})
+}
+
+func ownerCommandMatches(m *dto.Message) bool {
+	_, ok := service.ParseOwnerCommand(m.Content, current.GetRobotInfo().Name)
+	return ok
 }

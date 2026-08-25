@@ -1,8 +1,8 @@
 package current
 
 import (
-	"go-wechat/model/dto"
-	"go-wechat/plugin"
+	"github.com/loks666/FlyAI/model/dto"
+	"github.com/loks666/FlyAI/plugin"
 )
 
 // robotInfo

@@ -8,3 +8,88 @@ log
 dist
 *.log
 blacklist.txt
+__pycache__/
+*.py[cod]
+.env
+config.yaml
+.runtime/
+data/
+.agents/
+
+
+# ---------- Python ----------
+*$py.class
+*.so
+.Python
+/task
+documents-export-2026-6-22/
+
+# Build & dist
+*.zip
+*.mtx
+mock-platform-linux
+ssh/
+build/
+dist/
+task/
+*.egg-info/
+*.egg
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+
+# Virtual envs
+.venv/
+venv/
+env/
+ENV/
+
+# uv
+.uv/
+uv.lock.bak
+
+# Testing & coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+
+# Type checkers & linters
+.mypy_cache/
+.ruff_cache/
+.pytype/
+.dmypy.json
+dmypy.json
+
+# Docs build
+docs/_build/
+site/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# ---------- IDE ----------
+.idea/
+.vscode/
+.claude/
+*.swp
+*.swo
+*~
+
+# ---------- OS ----------
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---------- 项目私密 ----------
+群聊记录/
+*.local.md
+.env.*
+!.env.example
+doc/~$*
+*.pptx
+Claude Conversations/

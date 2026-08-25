@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="h-full bg-gray-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>功能配置 - FlyAI</title>
+  <link href="assets/css/daisyui-4.4.14-full.min.css" rel="stylesheet" type="text/css"/>
+  <link href="assets/css/index.css" rel="stylesheet" type="text/css"/>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp"></script>
+  <script defer src="assets/js/settings.js?v=20260825-5"></script>
+</head>
+<body class="h-full">
+<div class="min-h-full">
+  {{ template "head.html" "settings" }}
+  <main class="-mt-32">
+    <div class="mx-auto max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
+      <section class="rounded-xl bg-white p-5 shadow sm:p-7">
+        <div class="mb-6">
+          <h2 class="text-xl font-semibold text-gray-900">统一推送计划</h2>
+          <p class="mt-1 text-sm text-gray-500">每项功能都可以选择每天或每周指定一天，并设置独立推送时间。</p>
+        </div>
+        <div class="grid gap-5 lg:grid-cols-2 xl:grid-cols-3">
+          <article class="rounded-xl border border-gray-200 bg-gray-50/60 p-5">
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <h3 class="font-semibold text-gray-900">日报推送时间</h3>
+                <p class="mt-1 text-sm leading-6 text-gray-500">推送知乎实时热榜前 10 条及原始链接。</p>
+              </div>
+              <span class="flex-none whitespace-nowrap rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">全局</span>
+            </div>
+            <div class="mt-5 flex flex-wrap items-center gap-3">
+              <label class="sr-only" for="news-schedule">日报推送周期</label>
+              <select id="news-schedule" data-testid="news-schedule" class="rounded-lg border-gray-300 text-sm focus:border-green-500 focus:ring-green-500">{{template "scheduleOptions" .newsSchedule}}</select>
+              <input id="news-time" data-testid="news-time" type="time" value="{{.newsTime}}" class="rounded-lg border-gray-300 text-sm focus:border-green-500 focus:ring-green-500">
+              <button type="button" data-testid="save-news-time" onclick="saveFeatureSetting('news', 'news-schedule', 'news-time', this)" class="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 disabled:opacity-50">保存计划</button>
+            </div>
+          </article>
+          <article class="rounded-xl border border-gray-200 bg-gray-50/60 p-5">
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <h3 class="font-semibold text-gray-900">周报推送时间</h3>
+                <p class="mt-1 text-sm leading-6 text-gray-500">推送最近 7 天的群聊活跃排行榜。</p>
+              </div>
+              <span class="flex-none whitespace-nowrap rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700">全局</span>
+            </div>
+            <div class="mt-5 flex flex-wrap items-center gap-3">
+              <label class="sr-only" for="weekly-schedule">周报推送周期</label>
+              <select id="weekly-schedule" data-testid="weekly-schedule" class="rounded-lg border-gray-300 text-sm focus:border-green-500 focus:ring-green-500">{{template "scheduleOptions" .weeklySchedule}}</select>
+              <input id="weekly-time" data-testid="weekly-time" type="time" value="{{.weeklyTime}}" class="rounded-lg border-gray-300 text-sm focus:border-green-500 focus:ring-green-500">
+              <button type="button" data-testid="save-weekly-time" onclick="saveFeatureSetting('weekly', 'weekly-schedule', 'weekly-time', this)" class="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 disabled:opacity-50">保存计划</button>
+            </div>
+          </article>
+          <article class="rounded-xl border border-gray-200 bg-gray-50/60 p-5">
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <h3 class="font-semibold text-gray-900">潜水推送时间</h3>
+                <p class="mt-1 text-sm leading-6 text-gray-500">统计累计发言低于设定条数的当前群成员。</p>
+              </div>
+              <span class="flex-none whitespace-nowrap rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">全局</span>
+            </div>
+            <div class="mt-5 space-y-3">
+              <div class="flex flex-wrap items-center gap-3">
+                <label class="sr-only" for="dormant-schedule">潜水推送周期</label>
+                <select id="dormant-schedule" data-testid="dormant-schedule" class="rounded-lg border-gray-300 text-sm focus:border-green-500 focus:ring-green-500">{{template "scheduleOptions" .dormantSchedule}}</select>
+                <input id="dormant-time" data-testid="dormant-time" type="time" value="{{.dormantTime}}" class="rounded-lg border-gray-300 text-sm focus:border-green-500 focus:ring-green-500">
+              </div>
+              <div class="flex flex-wrap items-center gap-3">
+                <label for="dormant-threshold" class="whitespace-nowrap text-sm text-gray-600">发言少于</label>
+                <input id="dormant-threshold" data-testid="dormant-threshold" type="number" min="1" max="100000" step="1" value="{{.dormantThreshold}}" class="w-24 rounded-lg border-gray-300 text-sm focus:border-green-500 focus:ring-green-500" aria-describedby="dormant-threshold-help">
+                <span class="text-sm text-gray-500">条</span>
+                <button type="button" data-testid="save-dormant-time" onclick="saveFeatureSetting('dormant', 'dormant-schedule', 'dormant-time', this, 'dormant-threshold')" class="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 disabled:opacity-50">保存计划</button>
+              </div>
+            </div>
+            <p id="dormant-threshold-help" class="mt-3 text-xs leading-5 text-gray-500">所有消息都计数；设为 1 时仅统计从未发言者。</p>
+          </article>
+        </div>
+        <div class="mt-5 hidden rounded-lg px-4 py-3 text-sm" data-testid="settings-status" aria-live="polite"></div>
+      </section>
+
+      <section class="mt-7 rounded-xl bg-white p-5 shadow sm:p-7" data-testid="owner-settings">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <h2 class="text-xl font-semibold text-gray-900">主人微信号</h2>
+            <p class="mt-1 max-w-3xl text-sm leading-6 text-gray-500">仅支持机器人通讯录中的普通微信号。保存时自动绑定内部 wxid；只有绑定主人在群里发送以下命令才会执行。</p>
+            <div class="mt-3 flex flex-wrap gap-2 text-xs text-gray-600">
+              <span class="rounded-full bg-gray-100 px-3 py-1.5">@{{.robotName}} /周报</span>
+              <span class="rounded-full bg-gray-100 px-3 py-1.5">@{{.robotName}} /潜水</span>
+              <span class="rounded-full bg-gray-100 px-3 py-1.5">@{{.robotName}} /热点</span>
+            </div>
+          </div>
+          <form class="flex w-full flex-col gap-2 sm:flex-row lg:max-w-md" onsubmit="addOwner(event)">
+            <label class="sr-only" for="owner-account">主人微信号</label>
+            <input id="owner-account" data-testid="owner-account" type="text" autocomplete="off" placeholder="输入通讯录中的微信号" class="min-w-0 flex-1 rounded-lg border-gray-300 text-sm focus:border-green-500 focus:ring-green-500">
+            <button type="submit" data-testid="add-owner" class="whitespace-nowrap rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 disabled:opacity-50">添加主人</button>
+          </form>
+        </div>
+        <div class="mt-4 hidden rounded-lg px-4 py-3 text-sm" data-testid="owner-status" aria-live="polite"></div>
+
+        <div class="mt-6 space-y-3" data-testid="owner-list">
+          {{if .owners}}
+          {{range .owners}}
+          <article class="grid gap-4 rounded-xl border border-gray-200 bg-gray-50/60 p-4 lg:grid-cols-[minmax(0,1fr)_minmax(220px,0.7fr)_auto] lg:items-center" data-testid="owner-row-{{.Id}}">
+            <div class="min-w-0">
+              <div class="truncate font-semibold text-gray-900">{{.Nickname}}</div>
+              <div class="mt-1 truncate text-xs text-gray-500">已绑定 wxid：{{.Wxid}}</div>
+            </div>
+            <div>
+              <label class="sr-only" for="owner-account-{{.Id}}">修改主人微信号</label>
+              <input id="owner-account-{{.Id}}" data-testid="owner-account-{{.Id}}" type="text" value="{{.WechatAccount}}" class="w-full rounded-lg border-gray-300 text-sm focus:border-green-500 focus:ring-green-500">
+            </div>
+            <div class="flex gap-2 lg:justify-end">
+              <button type="button" data-testid="update-owner-{{.Id}}" onclick="updateOwner({{.Id}}, this)" class="rounded-lg border border-green-200 bg-white px-3 py-2 text-sm font-semibold text-green-700 hover:bg-green-50 disabled:opacity-50">保存修改</button>
+              <button type="button" data-testid="delete-owner-{{.Id}}" onclick="deleteOwner({{.Id}}, this)" class="rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50">删除</button>
+            </div>
+          </article>
+          {{end}}
+          {{else}}
+          <div class="rounded-xl border border-dashed border-gray-300 px-5 py-8 text-center text-sm text-gray-500" data-testid="owner-empty">尚未绑定主人，群聊命令不会响应任何人。</div>
+          {{end}}
+        </div>
+      </section>
+    </div>
+  </main>
+  {{template "footer.html"}}
+</div>
+</body>
+</html>

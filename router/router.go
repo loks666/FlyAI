@@ -2,7 +2,7 @@ package router
 
 import (
 	"github.com/gin-gonic/gin"
-	"go-wechat/app"
+	"github.com/loks666/FlyAI/app"
 )
 
 // Init
@@ -14,30 +14,32 @@ func Init(g *gin.Engine) {
 		ctx.Redirect(302, "/index.html")
 	})
 
-	g.GET("/index.html", app.Index)                  // 首页
-	g.GET("/friend.html", app.Friend)                // 好友列表
-	g.GET("/group.html", app.Group)                  // 群组列表
-	g.GET("/assistant.html", app.Assistant)          // AI角色
-	g.GET("/manager.html", app.ManageWithGroupAdmin) // 自己管理配置
+	g.GET("/index.html", app.Index)       // 首页
+	g.GET("/group.html", app.Group)       // 群组列表
+	g.GET("/friend.html", app.Friend)     // 通讯录
+	g.GET("/settings.html", app.Settings) // 功能配置
 
 	g.GET("/404.html", app.PageNotFound) // 群组列表
 
 	// 接口
 	api := g.Group("/api")
-	api.PUT("/ai/status", app.ChangeEnableAiStatus)               // 修改是否开启AI状态
-	api.POST("/ai/model", app.ChangeUseAiModel)                   // 修改使用的AI模型
-	api.POST("/ai/free", app.ChangeAiFreeLimit)                   // 修改AI免费次数
-	api.POST("/ai/assistant", app.ChangeUseAiAssistant)           // 修改使用的AI助手
-	api.POST("/ai/summary", app.SendAiSummary)                    // 手动发送AI聊天总结
-	api.PUT("/welcome/status", app.ChangeEnableWelcomeStatus)     // 修改是否开启迎新状态
-	api.PUT("/command/status", app.ChangeEnableCommandStatus)     // 修改是否开启指令状态
-	api.PUT("/news/status", app.ChangeEnableNewsStatus)           // 修改是否开启早报状态
-	api.PUT("/hot-top/status", app.ChangeEnableHotTopStatus)      // 修改是否开启热榜状态
-	api.PUT("/grouprank/status", app.ChangeEnableGroupRankStatus) // 修改是否开启水群排行榜状态
-	api.PUT("/grouprank/skip", app.ChangeSkipGroupRankStatus)     // 修改是否跳过水群排行榜状态
+	api.PUT("/monitor/status", app.ChangeEnableMonitorStatus)     // 修改是否监控群消息
+	api.GET("/monitor/groups", app.GetEnableMonitorGroups)        // 获取已开启监控的群
+	api.PUT("/grouprank/status", app.ChangeEnableGroupRankStatus) // 修改是否开启每周活跃排行榜
+	api.PUT("/grouprank/skip", app.ChangeSkipGroupRankStatus)     // 修改成员是否参与排行榜
+	api.PUT("/news/status", app.ChangeEnableNewsStatus)           // 修改是否开启每日热点早报
+	api.PUT("/dormant/status", app.ChangeEnableDormantStatus)     // 修改是否开启潜水成员统计
+	api.GET("/settings", app.GetFeatureSettings)                  // 获取统一功能设置
+	api.PUT("/settings/time", app.UpdateFeatureSettingTime)       // 修改统一功能推送时间
+	api.GET("/owners", app.GetOwners)                             // 获取主人微信号
+	api.POST("/owners", app.CreateOwner)                          // 添加主人微信号
+	api.PUT("/owners/:id", app.UpdateOwner)                       // 修改主人微信号
+	api.DELETE("/owners/:id", app.DeleteOwner)                    // 删除主人微信号
 	api.GET("/group/users", app.GetGroupUsers)                    // 获取群成员列表
-	api.PUT("/summary/status", app.ChangeEnableSummaryStatus)     // 修改是否开启群聊总结状态
-	api.PUT("/clearmembers", app.AutoClearMembers)                // 自动清理群成员
-
-	api.POST("/assistant", app.SaveAssistant) // 保存AI助手
+	api.POST("/sync/wechat", app.SyncWechatCatalog)               // 手动同步微信群、联系人和当前成员
+	api.POST("/tasks/weekly-rank", app.RunWeeklyRank)             // 手动发送指定群的最近7天排行榜
+	api.POST("/tasks/weekly-rank/all", app.RunAllWeeklyRanks)     // 一键发送所有已启用群的最近7天排行榜
+	api.POST("/tasks/ai-news", app.RunAINews)                     // 手动预览或发送指定群的 AI 早报
+	api.POST("/tasks/dormant", app.RunDormantReport)              // 手动预览或发送潜水成员统计
+	api.POST("/contacts/message", app.SendDirectMessage)          // 向通讯录联系人私聊发送消息
 }

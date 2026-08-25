@@ -1,9 +1,10 @@
 package service
 
 import (
-	"go-wechat/client"
-	"go-wechat/model/entity"
-	"go-wechat/model/vo"
+	"github.com/loks666/FlyAI/client"
+	"github.com/loks666/FlyAI/model/entity"
+	"github.com/loks666/FlyAI/model/vo"
+	"gorm.io/gorm"
 	"log"
 	"os"
 	"strconv"
@@ -17,15 +18,33 @@ func SaveMessage(msg entity.Message) {
 		return
 	}
 
-	// 检查消息是否存在，存在就跳过
-	var count int64
-	err := client.MySQL.Model(&entity.Message{}).Where("msg_id = ?", msg.MsgId).Count(&count).Error
-	if err != nil {
-		log.Printf("检查消息是否存在失败, 错误信息: %v", err)
+	// 检查消息是否存在。桥接器重复回填时允许修正发送者映射，
+	// 这样微信内部数字 contact.id 被解析成 wxid 后无需清空历史数据。
+	var old entity.Message
+	err := client.MySQL.Where("msg_id = ?", msg.MsgId).First(&old).Error
+	if err == nil {
+		if old.GroupUser != msg.GroupUser || old.Type != msg.Type || old.Content != msg.Content {
+			err = client.MySQL.Model(&entity.Message{}).
+				Where("msg_id = ?", msg.MsgId).
+				Updates(map[string]any{
+					"create_time":          msg.CreateTime,
+					"create_at":            msg.CreateAt,
+					"type":                 msg.Type,
+					"content":              msg.Content,
+					"display_full_content": msg.DisplayFullContent,
+					"from_user":            msg.FromUser,
+					"group_user":           msg.GroupUser,
+					"to_user":              msg.ToUser,
+					"raw":                  msg.Raw,
+				}).Error
+			if err != nil {
+				log.Printf("修正消息发送者失败, 消息Id: %d, 错误信息: %v", msg.MsgId, err)
+			}
+		}
 		return
 	}
-	if count > 0 {
-		//log.Printf("消息已存在，消息Id: %d", msg.MsgId)
+	if err != gorm.ErrRecordNotFound {
+		log.Printf("检查消息是否存在失败, 错误信息: %v", err)
 		return
 	}
 	err = client.MySQL.Create(&msg).Error

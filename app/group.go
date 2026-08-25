@@ -2,7 +2,7 @@ package app
 
 import (
 	"github.com/gin-gonic/gin"
-	"go-wechat/service"
+	"github.com/loks666/FlyAI/service"
 	"net/http"
 )
 
@@ -19,6 +19,8 @@ func GetGroupUsers(ctx *gin.Context) {
 		ctx.String(http.StatusBadRequest, "参数错误")
 		return
 	}
+	// Always refresh this group's current membership before rendering the list.
+	service.SyncGroupMembers(p.GroupId)
 	// 查询数据
 	records, err := service.GetGroupUsersByGroupId(p.GroupId)
 	if err != nil {
@@ -30,13 +32,13 @@ func GetGroupUsers(ctx *gin.Context) {
 		"records": records,
 	}
 	// 循环数据，统计健在成员
-	var isOkCount int
+	currentMembers := make(map[string]struct{})
 	for _, record := range records {
 		if record.IsMember {
-			isOkCount++
+			currentMembers[record.Wxid] = struct{}{}
 		}
 	}
-	result["isOkCount"] = isOkCount
+	result["isOkCount"] = len(currentMembers)
 
 	// 暂时先就这样写着，跑通了再改
 	ctx.JSON(http.StatusOK, result)

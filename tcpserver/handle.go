@@ -2,7 +2,7 @@ package tcpserver
 
 import (
 	"bytes"
-	"go-wechat/config"
+	"github.com/loks666/FlyAI/config"
 	"io"
 	"log"
 	"net"

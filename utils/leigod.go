@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/go-resty/resty/v2"
-	"go-wechat/model/dto"
+	"github.com/loks666/FlyAI/model/dto"
 	"log"
 )
 

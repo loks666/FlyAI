@@ -1,8 +1,8 @@
 package command
 
 import (
-	"go-wechat/plugin"
-	"go-wechat/utils"
+	"github.com/loks666/FlyAI/plugin"
+	"github.com/loks666/FlyAI/utils"
 )
 
 // HelpCmd

@@ -1,4 +1,4 @@
-module go-wechat
+module github.com/loks666/FlyAI
 
 go 1.21
 

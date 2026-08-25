@@ -25,6 +25,12 @@ type GroupUser struct {
 	Members        string `json:"members"`        // 成员Id `^G`切割
 }
 
+type GroupActiveMembers struct {
+	ChatRoomId string           `json:"chatRoomId"`
+	Members    []string         `json:"members"`
+	Counts     map[string]int64 `json:"counts"`
+}
+
 // ContactProfile
 // @description: 好友资料
 type ContactProfile struct {

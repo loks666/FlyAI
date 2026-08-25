@@ -37,10 +37,35 @@ type DateTime time.Time
 
 // Scan implements the Scanner interface.
 func (dt *DateTime) Scan(value interface{}) error {
-	// mysql 内部日期的格式可能是 2006-01-02 15:04:05 +0800 CST 格式，所以检出的时候还需要进行一次格式化
-	tTime, _ := time.Parse("2006-01-02 15:04:05 +0800 CST", value.(time.Time).String())
-	*dt = DateTime(tTime)
-	return nil
+	switch typed := value.(type) {
+	case nil:
+		*dt = DateTime(time.Time{})
+		return nil
+	case time.Time:
+		*dt = DateTime(typed)
+		return nil
+	case []byte:
+		return dt.scanString(string(typed))
+	case string:
+		return dt.scanString(typed)
+	default:
+		return fmt.Errorf("unsupported DateTime scan type %T", value)
+	}
+}
+
+func (dt *DateTime) scanString(value string) error {
+	if value == "" {
+		*dt = DateTime(time.Time{})
+		return nil
+	}
+	for _, layout := range []string{dateTimeFormat, "2006-01-02 15:04:05", time.RFC3339Nano} {
+		parsed, err := time.ParseInLocation(layout, value, time.Local)
+		if err == nil {
+			*dt = DateTime(parsed)
+			return nil
+		}
+	}
+	return fmt.Errorf("unsupported DateTime value %q", value)
 }
 
 // Value implements the driver Valuer interface.

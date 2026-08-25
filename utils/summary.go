@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/loks666/FlyAI/config"
+	"github.com/loks666/FlyAI/model/vo"
 	"github.com/sashabaranov/go-openai"
-	"go-wechat/config"
-	"go-wechat/model/vo"
 	"log"
 	"strings"
 )

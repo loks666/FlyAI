@@ -1,9 +1,9 @@
 package plugins
 
 import (
-	"go-wechat/plugin"
-	"go-wechat/service"
-	"go-wechat/utils"
+	"github.com/loks666/FlyAI/plugin"
+	"github.com/loks666/FlyAI/service"
+	"github.com/loks666/FlyAI/utils"
 	"time"
 )
 

@@ -27,12 +27,72 @@
 </button>
 {{end}}
 
+{{define "scheduleOptions"}}
+<option value="daily" {{if eq . "daily"}}selected{{end}}>每天</option>
+<option value="monday" {{if eq . "monday"}}selected{{end}}>每周一</option>
+<option value="tuesday" {{if eq . "tuesday"}}selected{{end}}>每周二</option>
+<option value="wednesday" {{if eq . "wednesday"}}selected{{end}}>每周三</option>
+<option value="thursday" {{if eq . "thursday"}}selected{{end}}>每周四</option>
+<option value="friday" {{if eq . "friday"}}selected{{end}}>每周五</option>
+<option value="saturday" {{if eq . "saturday"}}selected{{end}}>每周六</option>
+<option value="sunday" {{if eq . "sunday"}}selected{{end}}>每周日</option>
+{{end}}
 
-<!-- 水群排行榜 -->
+<!-- 潜水成员统计 -->
+{{define "dormant"}}
+<button type="button"
+        class="{{ if eq .EnableDormant true }}bg-green-600{{ else }}bg-gray-200{{ end }} relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-2"
+        role="switch"
+        aria-label="潜水成员统计 {{.Nickname}}"
+        aria-checked="{{ if eq .EnableDormant true }}true{{ else }}false{{ end }}"
+        data-testid="dormant-{{.Wxid}}"
+        onclick="changeGroupDormantStatus({{.Wxid}})">
+  <span class="{{ if eq .EnableDormant true }}translate-x-5{{ else }}translate-x-0{{ end }} pointer-events-none relative inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out">
+    <span class="{{ if eq .EnableDormant true }}opacity-0{{ else }}opacity-100{{ end }} absolute inset-0 flex h-full w-full items-center justify-center transition-opacity" aria-hidden="true">
+      <svg class="h-3 w-3 text-gray-400" fill="none" viewBox="0 0 12 12"><path d="M4 4l4 4m0-4L4 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </span>
+    <span class="{{ if eq .EnableDormant true }}opacity-100{{ else }}opacity-0{{ end }} absolute inset-0 flex h-full w-full items-center justify-center transition-opacity" aria-hidden="true">
+      <svg class="h-3 w-3 text-green-600" fill="currentColor" viewBox="0 0 12 12"><path d="M3.5 6.5L5 8l3.5-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+    </span>
+  </span>
+</button>
+{{end}}
+
+
+<!-- 群消息监控主开关 -->
+{{define "monitor"}}
+<button type="button"
+        class="{{ if eq .EnableMonitor true }}bg-green-600{{ else }}bg-gray-200{{ end }} relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-2"
+        role="switch"
+        aria-label="监控 {{.Nickname}}"
+        aria-checked="{{ if eq .EnableMonitor true }}true{{ else }}false{{ end }}"
+        data-testid="monitor-{{.Wxid}}"
+        onclick="changeGroupMonitorStatus({{.Wxid}})">
+  <span class="{{ if eq .EnableMonitor true }}translate-x-5{{ else }}translate-x-0{{ end }} pointer-events-none relative inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out">
+    <span class="{{ if eq .EnableMonitor true }}opacity-0{{ else }}opacity-100{{ end }} absolute inset-0 flex h-full w-full items-center justify-center transition-opacity" aria-hidden="true">
+      <svg class="h-3 w-3 text-gray-400" fill="none" viewBox="0 0 12 12">
+        <path d="M4 4l4 4m0-4L4 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </span>
+    <span class="{{ if eq .EnableMonitor true }}opacity-100{{ else }}opacity-0{{ end }} absolute inset-0 flex h-full w-full items-center justify-center transition-opacity" aria-hidden="true">
+      <svg class="h-3 w-3 text-green-600" fill="currentColor" viewBox="0 0 12 12">
+        <path d="M3.5 6.5L5 8l3.5-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      </svg>
+    </span>
+  </span>
+</button>
+{{end}}
+
+
+<!-- 每周活跃排行榜 -->
 {{define "chatRank"}}
 <button type="button"
         class="{{ if eq .EnableChatRank true }}bg-green-600{{ else }}bg-gray-200{{ end }} relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-2"
-        role="switch" aria-checked="false" onclick="changeGroupRankEnableStatus({{.Wxid}})">
+        role="switch"
+        aria-label="每周活跃排行榜 {{.Nickname}}"
+        aria-checked="{{ if eq .EnableChatRank true }}true{{ else }}false{{ end }}"
+        data-testid="rank-{{.Wxid}}"
+        onclick="changeGroupRankEnableStatus({{.Wxid}})">
   <span
     class="{{ if eq .EnableChatRank true }}translate-x-5{{ else }}translate-x-0{{ end }} pointer-events-none relative inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out">
     <span
@@ -168,11 +228,15 @@
 </button>
 {{end}}
 
-<!-- 早报 -->
+<!-- 每日热点早报 -->
 {{define "news"}}
 <button type="button"
         class="{{ if eq .EnableNews true }}bg-green-600{{ else }}bg-gray-200{{ end }} relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-2"
-        role="switch" aria-checked="false" onclick="changeUserNewsStatus({{.Wxid}})">
+        role="switch"
+        aria-label="每日热点早报 {{.Nickname}}"
+        aria-checked="{{ if eq .EnableNews true }}true{{ else }}false{{ end }}"
+        data-testid="ai-news-{{.Wxid}}"
+        onclick="changeGroupNewsStatus({{.Wxid}})">
   <span
     class="{{ if eq .EnableNews true }}translate-x-5{{ else }}translate-x-0{{ end }} pointer-events-none relative inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out">
     <span

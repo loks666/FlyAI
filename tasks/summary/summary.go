@@ -2,9 +2,9 @@ package summary
 
 import (
 	"fmt"
-	"go-wechat/model/vo"
-	"go-wechat/service"
-	"go-wechat/utils"
+	"github.com/loks666/FlyAI/model/vo"
+	"github.com/loks666/FlyAI/service"
+	"github.com/loks666/FlyAI/utils"
 	"log"
 	"time"
 )

@@ -1,7 +1,7 @@
 package plugin
 
 import (
-	"go-wechat/model/dto"
+	"github.com/loks666/FlyAI/model/dto"
 )
 
 // MessageHandler 消息处理函数

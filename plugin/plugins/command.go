@@ -1,9 +1,9 @@
 package plugins
 
 import (
-	"go-wechat/plugin"
-	"go-wechat/plugin/plugins/command"
-	"go-wechat/utils"
+	"github.com/loks666/FlyAI/plugin"
+	"github.com/loks666/FlyAI/plugin/plugins/command"
+	"github.com/loks666/FlyAI/utils"
 	"regexp"
 	"strings"
 )
