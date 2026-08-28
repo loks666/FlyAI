@@ -47,10 +47,11 @@ func GetFriendInfoById(wxId string) (ent entity.Friend, err error) {
 	return
 }
 
-// GetAllEnableMonitorGroups returns groups explicitly selected for monitoring.
-func GetAllEnableMonitorGroups() (records []entity.Friend, err error) {
+// GetAllBridgeGroups returns every current group that the local bridge must
+// track. Tracking is deliberately independent from automatic feature switches:
+// owner commands still need complete message history when scheduling is off.
+func GetAllBridgeGroups() (records []entity.Friend, err error) {
 	err = client.MySQL.
-		Where("enable_monitor = ?", 1).
 		Where("is_ok IS TRUE").
 		Where("wxid LIKE '%@chatroom'").
 		Find(&records).Error

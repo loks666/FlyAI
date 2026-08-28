@@ -128,7 +128,7 @@ func RunAllWeeklyRanks(ctx *gin.Context) {
 		return
 	}
 	if len(groups) == 0 {
-		ctx.JSON(http.StatusUnprocessableEntity, gin.H{"message": "没有同时开启监控和周报的群"})
+		ctx.JSON(http.StatusUnprocessableEntity, gin.H{"message": "没有同时开启监控和排行榜的群"})
 		return
 	}
 	if !acquireWeeklyRank(weeklyRankAllKey, true) {

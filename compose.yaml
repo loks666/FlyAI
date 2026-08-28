@@ -1,5 +1,6 @@
 services:
   mysql:
+    container_name: flyai-mysql
     image: ${MYSQL_IMAGE:-mysql:8.4}
     restart: unless-stopped
     environment:
@@ -19,3 +20,22 @@ services:
       timeout: 5s
       retries: 60
       start_period: 5m
+
+  redis:
+    container_name: flyai-redis
+    image: ${REDIS_IMAGE:-redis:7.4-alpine}
+    restart: unless-stopped
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-flyai-redis}
+      TZ: Asia/Shanghai
+    command: ["sh", "-c", "exec redis-server --appendonly yes --requirepass \"$$REDIS_PASSWORD\""]
+    ports:
+      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
+    volumes:
+      - ./data/redis:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" ping 2>/dev/null | grep -q PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 10s

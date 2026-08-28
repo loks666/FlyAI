@@ -8,9 +8,12 @@ import (
 )
 
 type DormantMember struct {
-	Wxid     string `json:"wxid"`
-	Nickname string `json:"nickname"`
-	Count    int64  `json:"count"`
+	Wxid           string `json:"wxid"`
+	Nickname       string `json:"nickname"`
+	GroupNickname  string `json:"groupNickname"`
+	WechatNickname string `json:"wechatNickname"`
+	WechatAccount  string `json:"wechatAccount"`
+	Count          int64  `json:"count"`
 }
 
 // GetGroupUsersByGroupId
@@ -46,7 +49,10 @@ func GetDormantGroupMembers(groupId string, messageCounts map[string]int64, self
 		Table("t_group_user AS tgu").
 		Joins("LEFT JOIN t_friend AS tf ON tf.wxid = tgu.wxid").
 		Select(`tgu.wxid,
-			COALESCE(NULLIF(MAX(tgu.nickname), ''), NULLIF(MAX(tf.nickname), ''), tgu.wxid) AS nickname`).
+			COALESCE(NULLIF(MAX(tgu.nickname), ''), NULLIF(MAX(tf.nickname), ''), tgu.wxid) AS nickname,
+			COALESCE(NULLIF(MAX(tgu.nickname), ''), tgu.wxid) AS group_nickname,
+			COALESCE(NULLIF(MAX(tgu.wechat_nickname), ''), NULLIF(MAX(tf.nickname), ''), '') AS wechat_nickname,
+			COALESCE(NULLIF(MAX(tgu.account), ''), NULLIF(MAX(tf.custom_account), ''), '') AS wechat_account`).
 		Where("tgu.group_id = ?", groupId)
 	if selfId != "" {
 		tx = tx.Where("tgu.wxid <> ?", selfId)

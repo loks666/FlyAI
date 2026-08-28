@@ -61,10 +61,12 @@ func ChangeEnableMonitorStatus(ctx *gin.Context) {
 }
 
 // GetEnableMonitorGroups is consumed by the local WeChat database bridge.
+// It returns all current contact groups so manual owner commands retain live
+// history even when automatic monitoring and scheduled delivery are disabled.
 func GetEnableMonitorGroups(ctx *gin.Context) {
-	records, err := service.GetAllEnableMonitorGroups()
+	records, err := service.GetAllBridgeGroups()
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "获取监控群失败"})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "获取桥接群失败"})
 		return
 	}
 	groups := make([]string, 0, len(records))

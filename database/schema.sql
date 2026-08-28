@@ -82,9 +82,13 @@ CREATE TABLE IF NOT EXISTS `t_message` (
   `type` bigint DEFAULT NULL,
   `content` longtext,
   `display_full_content` longtext,
-  `from_user` longtext,
-  `group_user` longtext,
-  `to_user` longtext,
+    `from_user` longtext,
+    `group_user` longtext,
+    `sender_nickname` longtext,
+    `sender_group_nickname` longtext,
+    `sender_wechat_account` longtext,
+    `group_nickname` longtext,
+    `to_user` longtext,
   `raw` longtext,
   PRIMARY KEY (`msg_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

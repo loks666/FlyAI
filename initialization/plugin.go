@@ -19,11 +19,6 @@ func Plugin() {
 
 	// 注册插件
 
-	// 保存消息进数据库
-	dispatcher.RegisterHandler(func(*dto.Message) bool {
-		return true
-	}, plugins.SaveToDb)
-
 	// 通知邀请入群消息到配置用户
 	dispatcher.RegisterHandler(func(m *dto.Message) bool {
 		flag, _ := m.IsInvitationJoinGroup()
@@ -38,10 +33,15 @@ func Plugin() {
 		return m.IsNewFriendAdd() || m.IsJoinToGroup() || m.IsOldFriendBack()
 	}, plugins.ReplyNewFriend)
 
-	// 私聊指令消息
+	// 群聊中的主人指令消息
 	dispatcher.RegisterHandler(func(m *dto.Message) bool {
-		return m.IsGroup() && m.Type == types.MsgTypeText && service.IsOwnerWxid(m.GroupUser) && ownerCommandMatches(m)
+		return isOwnerCommandMessage(m)
 	}, plugins.OwnerCommand)
+
+	// 非管理员在群里 @机器人时，执行按发送者 wxid 隔离的回复状态机。
+	dispatcher.RegisterHandler(func(m *dto.Message) bool {
+		return isNonOwnerMentionMessage(m)
+	}, plugins.AttackReply)
 
 	// 普通指令只允许私聊；群聊仅开放绑定主人的三个固定命令。
 	dispatcher.RegisterHandler(func(m *dto.Message) bool {
@@ -62,18 +62,48 @@ func Plugin() {
 	// 注册消息处理器
 	handler := plugin.DispatchMessage(dispatcher)
 	current.SetRobotMessageHandler(func(message *dto.Message) {
+		// Complete the persistence attempt before acknowledging the bridge, then
+		// queue live business handlers. Historical rows never trigger replies.
+		plugins.SaveDTOToDb(message)
 		if message.IsBackfill {
-			plugins.SaveDTOToDb(message)
 			return
 		}
-		if message.IsGroup() && !service.IsGroupMonitorEnabled(message.FromUser) {
+		// 第二次非管理员回复成功后，静默状态按发送者 wxid 跨群、
+		// 跨私聊生效；消息仍已在上方完成入库。
+		if message.IsPrivateText() && service.ShouldIgnoreNonOwnerMessage(message.FromUser) {
 			return
+		}
+		// 主人手动指令与群的定时监控开关彻底分离：即使群未开启
+		// 监控，绑定主人仍可以在群里 @机器人执行固定命令。
+		if message.IsGroup() && !service.IsGroupMonitorEnabled(message.FromUser) {
+			if !isOwnerCommandMessage(message) && !isNonOwnerMentionMessage(message) {
+				// Keep the history complete for on-demand owner reports, but do not
+				// run any automatic response plugin for a disabled group.
+				return
+			}
 		}
 		handler(message)
 	})
 }
 
+func isOwnerCommandMessage(m *dto.Message) bool {
+	return m.IsGroup() && m.Type == types.MsgTypeText && service.IsOwnerWxid(m.GroupUser) && ownerCommandMatches(m)
+}
+
+func isNonOwnerMentionMessage(m *dto.Message) bool {
+	robot := current.GetRobotInfo()
+	return m.IsGroup() &&
+		m.Type == types.MsgTypeText &&
+		m.GroupUser != robot.WxId &&
+		!service.IsOwnerWxid(m.GroupUser) &&
+		service.IsRobotMention(m.Content, robot.Name)
+}
+
 func ownerCommandMatches(m *dto.Message) bool {
-	_, ok := service.ParseOwnerCommand(m.Content, current.GetRobotInfo().Name)
+	robotName := current.GetRobotInfo().Name
+	if service.HasRobotCommand(m.Content, robotName) {
+		return true
+	}
+	_, _, ok := service.ParseOwnerAttackTargets(m.Content, robotName)
 	return ok
 }

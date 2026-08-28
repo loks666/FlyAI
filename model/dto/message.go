@@ -11,19 +11,23 @@ import (
 // Message
 // @description: 消息
 type Message struct {
-	MsgId              int64             `json:"msgId"`
-	CreateTime         int               `json:"createTime"`
-	Content            string            `json:"content"`
-	DisplayFullContent string            `json:"displayFullContent"`
-	FromUser           string            `json:"fromUser"`
-	GroupUser          string            `json:"-"`
-	MsgSequence        int               `json:"msgSequence"`
-	Pid                int               `json:"pid"`
-	Signature          string            `json:"signature"`
-	ToUser             string            `json:"toUser"`
-	Type               types.MessageType `json:"type"`
-	IsBackfill         bool              `json:"isBackfill"`
-	Raw                string            `json:"raw"`
+	MsgId               int64             `json:"msgId"`
+	CreateTime          int               `json:"createTime"`
+	Content             string            `json:"content"`
+	DisplayFullContent  string            `json:"displayFullContent"`
+	FromUser            string            `json:"fromUser"`
+	GroupUser           string            `json:"-"`
+	SenderNickname      string            `json:"senderNickname,omitempty"`
+	SenderGroupNickname string            `json:"senderGroupNickname,omitempty"`
+	SenderWechatAccount string            `json:"senderWechatAccount,omitempty"`
+	GroupNickname       string            `json:"groupNickname,omitempty"`
+	MsgSequence         int               `json:"msgSequence"`
+	Pid                 int               `json:"pid"`
+	Signature           string            `json:"signature"`
+	ToUser              string            `json:"toUser"`
+	Type                types.MessageType `json:"type"`
+	IsBackfill          bool              `json:"isBackfill"`
+	Raw                 string            `json:"raw"`
 }
 
 // systemMsgDataXml

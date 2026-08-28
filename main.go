@@ -86,7 +86,7 @@ func main() {
 	router.Init(app)
 	httpPort := os.Getenv("HUB_HTTP_PORT")
 	if _, err := strconv.Atoi(httpPort); err != nil {
-		httpPort = "8080"
+		httpPort = "9527"
 	}
 	if err := app.Run("127.0.0.1:" + httpPort); err != nil {
 		log.Panicf("服务启动失败：%v", err)

@@ -3,9 +3,7 @@ package watergroup
 import (
 	"errors"
 	"fmt"
-	"github.com/loks666/FlyAI/client"
 	"github.com/loks666/FlyAI/config"
-	"github.com/loks666/FlyAI/model/entity"
 	"github.com/loks666/FlyAI/service"
 	"github.com/loks666/FlyAI/utils"
 	"log"
@@ -64,22 +62,17 @@ func BuildWeekRank(gid string) (string, error) {
 	}
 
 	// 查询群成员总数
-	var groupUsers int64
-	err = client.MySQL.Model(&entity.GroupUser{}).
-		Where("group_id = ?", gid).
-		Where("is_member IS TRUE").
-		Distinct("wxid").
-		Count(&groupUsers).Error
+	groupUsers, eligibleUsers, err := countRankGroupUsers(gid)
 	if err != nil {
 		log.Printf("查询群成员总数失败, 错误信息: %v", err)
 	}
 	// 计算群成员参与情况
-	showActivity := err == nil && groupUsers > 0
+	showActivity := err == nil && eligibleUsers > 0
 	activity := 0.0
 	silentUsers := int64(0)
-	if groupUsers > 0 {
-		activity = float64(len(records)) / float64(groupUsers) * 100
-		silentUsers = groupUsers - int64(len(records))
+	if eligibleUsers > 0 {
+		activity = float64(len(records)) / float64(eligibleUsers) * 100
+		silentUsers = eligibleUsers - int64(len(records))
 		if silentUsers < 0 {
 			silentUsers = 0
 		}
@@ -131,15 +124,7 @@ func BuildWeekRank(gid string) (string, error) {
 			break
 		}
 		log.Printf("账号: %s[%s] -> %d", r.Nickname, r.GroupUser, r.Count)
-		badge := "🏆"
-		switch i {
-		case 0:
-			badge = "🥇"
-		case 1:
-			badge = "🥈"
-		case 2:
-			badge = "🥉"
-		}
+		badge := rankBadge(i)
 		notifyMsgs = append(notifyMsgs, fmt.Sprintf("%s %s -> %d条(%s)", badge, r.Nickname, r.Count, formatRankingBreakdown(r)))
 	}
 

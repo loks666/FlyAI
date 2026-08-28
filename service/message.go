@@ -5,9 +5,11 @@ import (
 	"github.com/loks666/FlyAI/model/entity"
 	"github.com/loks666/FlyAI/model/vo"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"log"
 	"os"
 	"strconv"
+	"time"
 )
 
 // SaveMessage
@@ -23,19 +25,27 @@ func SaveMessage(msg entity.Message) {
 	var old entity.Message
 	err := client.MySQL.Where("msg_id = ?", msg.MsgId).First(&old).Error
 	if err == nil {
-		if old.GroupUser != msg.GroupUser || old.Type != msg.Type || old.Content != msg.Content {
+		if old.GroupUser != msg.GroupUser || old.Type != msg.Type || old.Content != msg.Content ||
+			old.SenderNickname != msg.SenderNickname ||
+			old.SenderGroupNickname != msg.SenderGroupNickname ||
+			old.SenderWechatAccount != msg.SenderWechatAccount ||
+			old.GroupNickname != msg.GroupNickname {
 			err = client.MySQL.Model(&entity.Message{}).
 				Where("msg_id = ?", msg.MsgId).
 				Updates(map[string]any{
-					"create_time":          msg.CreateTime,
-					"create_at":            msg.CreateAt,
-					"type":                 msg.Type,
-					"content":              msg.Content,
-					"display_full_content": msg.DisplayFullContent,
-					"from_user":            msg.FromUser,
-					"group_user":           msg.GroupUser,
-					"to_user":              msg.ToUser,
-					"raw":                  msg.Raw,
+					"create_time":           msg.CreateTime,
+					"create_at":             msg.CreateAt,
+					"type":                  msg.Type,
+					"content":               msg.Content,
+					"display_full_content":  msg.DisplayFullContent,
+					"from_user":             msg.FromUser,
+					"group_user":            msg.GroupUser,
+					"sender_nickname":       msg.SenderNickname,
+					"sender_group_nickname": msg.SenderGroupNickname,
+					"sender_wechat_account": msg.SenderWechatAccount,
+					"group_nickname":        msg.GroupNickname,
+					"to_user":               msg.ToUser,
+					"raw":                   msg.Raw,
 				}).Error
 			if err != nil {
 				log.Printf("修正消息发送者失败, 消息Id: %d, 错误信息: %v", msg.MsgId, err)
@@ -50,14 +60,79 @@ func SaveMessage(msg entity.Message) {
 	err = client.MySQL.Create(&msg).Error
 	if err != nil {
 		log.Printf("消息入库失败, 错误信息: %v", err)
+		return
 	}
-	log.Printf("消息入库成功，消息Id: %d", msg.MsgId)
 
 	// 更新最后活跃时间
 	// 只处理收到的消息
 	if msg.MsgId > 1 {
 		go updateLastActive(msg)
 	}
+}
+
+// SaveMessagesBatch upserts a historical replay in one database transaction.
+// It deliberately avoids the per-message existence query used by live traffic.
+func SaveMessagesBatch(messages []entity.Message) error {
+	if len(messages) == 0 {
+		return nil
+	}
+	if flag, _ := strconv.ParseBool(os.Getenv("DONT_SAVE")); flag {
+		return nil
+	}
+
+	columns := []string{
+		"create_time", "create_at", "type", "content", "display_full_content",
+		"from_user", "group_user", "sender_nickname", "sender_group_nickname",
+		"sender_wechat_account", "group_nickname", "to_user", "raw",
+	}
+	return client.MySQL.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "msg_id"}},
+			DoUpdates: clause.AssignmentColumns(columns),
+		}).CreateInBatches(messages, len(messages)).Error; err != nil {
+			return err
+		}
+		return updateBatchLastActive(tx, messages)
+	})
+}
+
+type groupMemberKey struct {
+	groupID string
+	wxid    string
+}
+
+func updateBatchLastActive(tx *gorm.DB, messages []entity.Message) error {
+	groupLatest := make(map[string]time.Time)
+	memberLatest := make(map[groupMemberKey]time.Time)
+	for _, msg := range messages {
+		if msg.MsgId <= 1 {
+			continue
+		}
+		if msg.CreateAt.After(groupLatest[msg.FromUser]) {
+			groupLatest[msg.FromUser] = msg.CreateAt
+		}
+		if msg.GroupUser != "" {
+			key := groupMemberKey{groupID: msg.FromUser, wxid: msg.GroupUser}
+			if msg.CreateAt.After(memberLatest[key]) {
+				memberLatest[key] = msg.CreateAt
+			}
+		}
+	}
+	for groupID, activeAt := range groupLatest {
+		if err := tx.Model(&entity.Friend{}).
+			Where("wxid = ?", groupID).
+			Update("last_active", gorm.Expr("GREATEST(last_active, ?)", activeAt)).Error; err != nil {
+			return err
+		}
+	}
+	for key, activeAt := range memberLatest {
+		if err := tx.Model(&entity.GroupUser{}).
+			Where("group_id = ? AND wxid = ?", key.groupID, key.wxid).
+			Update("last_active", gorm.Expr("GREATEST(last_active, ?)", activeAt)).Error; err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // GetTextMessagesById

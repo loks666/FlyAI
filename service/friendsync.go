@@ -2,33 +2,34 @@ package service
 
 import (
 	"github.com/loks666/FlyAI/client"
+	"github.com/loks666/FlyAI/common/applog"
 	"github.com/loks666/FlyAI/common/types"
 	"github.com/loks666/FlyAI/config"
 	"github.com/loks666/FlyAI/model/entity"
 	"github.com/loks666/FlyAI/utils"
 	"log"
 	"strings"
-	"sync"
 	"time"
 )
-
-var syncFriendLock sync.Mutex
 
 // SyncFriend
 // @description: 同步好友列表
 func SyncFriend() {
-	syncFriend(true)
+	_ = globalSyncQueue.do("friend:announce", func() error {
+		syncFriend(true)
+		return nil
+	})
 }
 
 // SyncFriendCatalog refreshes contacts without sending introductions or notifications.
 func SyncFriendCatalog() {
-	syncFriend(false)
+	_ = globalSyncQueue.do("friend:catalog", func() error {
+		syncFriend(false)
+		return nil
+	})
 }
 
 func syncFriend(announce bool) {
-	syncFriendLock.Lock()
-	defer syncFriendLock.Unlock()
-
 	// 获取好友列表
 	friends, err := utils.GetFriendList()
 	if err != nil {
@@ -55,7 +56,10 @@ func syncFriend(announce bool) {
 
 	// 开启事务
 	tx := client.MySQL.Begin()
-	defer tx.Commit()
+	if tx.Error != nil {
+		log.Printf("开启好友同步事务失败: %s", tx.Error.Error())
+		return
+	}
 
 	// 循环获取到的好友列表
 	for _, item := range friends {
@@ -178,14 +182,26 @@ func syncFriend(announce bool) {
 	if err != nil {
 		log.Printf("清理好友失败: %s", err.Error())
 	}
+	if err = tx.Commit().Error; err != nil {
+		log.Printf("提交好友同步事务失败: %s", err.Error())
+		return
+	}
 
-	log.Println("同步好友列表完成")
+	invalidateAllMessageIdentityCache()
+	refreshFriendContactCache()
+	applog.ContactSyncPrintln("同步好友列表完成")
 }
 
 // SyncGroupMembers
 // @description: 同步群成员
 // @param wxId
-func SyncGroupMembers(wxId string) (err error) {
+func SyncGroupMembers(wxId string) error {
+	return globalSyncQueue.do("group:"+wxId, func() error {
+		return syncGroupMembers(wxId)
+	})
+}
+
+func syncGroupMembers(wxId string) (err error) {
 	membersIds, memberNicknames, admin, err := utils.GetGroupMembers(wxId)
 	if err != nil {
 		return
@@ -216,19 +232,35 @@ func SyncGroupMembers(wxId string) (err error) {
 		return
 	}
 	// 将历史数据整理成map
-	oldMap := make(map[string]bool)
+	oldMap := make(map[string]entity.GroupUser)
 	for _, item := range oldData {
-		oldMap[item.Wxid] = item.IsMember
+		oldMap[item.Wxid] = item
 	}
 
 	// 循环获取到的群成员列表
 	for _, wxid := range membersIds {
 		preferredNickname := memberNicknames[wxid]
 		// 已存在的成员也要刷新群内昵称，避免长期保留旧的个人昵称。
-		if isMember, ok := oldMap[wxid]; ok && isMember {
+		if existing, ok := oldMap[wxid]; ok && existing.IsMember {
 			updates := map[string]any{"is_admin": wxid == admin}
 			if preferredNickname != "" {
 				updates["nickname"] = preferredNickname
+			}
+			if existing.WechatNickname == "" || existing.Account == "" {
+				cp, profileErr := utils.GetContactProfile(wxid)
+				if profileErr != nil {
+					log.Printf("补充成员[%s]资料失败: %s", wxid, profileErr.Error())
+				} else {
+					if cp.Nickname != "" {
+						updates["wechat_nickname"] = cp.Nickname
+					}
+					if cp.Account != "" {
+						updates["account"] = cp.Account
+					}
+					if cp.HeadImage != "" {
+						updates["head_image"] = cp.HeadImage
+					}
+				}
 			}
 			if err = client.MySQL.Model(&entity.GroupUser{}).
 				Where("group_id = ?", wxId).
@@ -258,12 +290,13 @@ func SyncGroupMembers(wxId string) (err error) {
 				// 历史数据中存在，修改
 				// 修改
 				gupm := map[string]any{
-					"account":    cp.Account,
-					"head_image": cp.HeadImage,
-					"nickname":   nickname,
-					"is_member":  true,
-					"is_admin":   cp.Wxid == admin,
-					"leave_time": nil,
+					"account":         cp.Account,
+					"head_image":      cp.HeadImage,
+					"nickname":        nickname,
+					"wechat_nickname": cp.Nickname,
+					"is_member":       true,
+					"is_admin":        cp.Wxid == admin,
+					"leave_time":      nil,
 				}
 				err = client.MySQL.Model(&entity.GroupUser{}).Where("group_id = ?", wxId).Where("wxid = ?", wxid).Updates(gupm).Error
 				if err != nil {
@@ -274,15 +307,16 @@ func SyncGroupMembers(wxId string) (err error) {
 				// 新增的
 				// 新增
 				err = client.MySQL.Create(&entity.GroupUser{
-					GroupId:    wxId,
-					Account:    cp.Account,
-					HeadImage:  cp.HeadImage,
-					Nickname:   nickname,
-					Wxid:       cp.Wxid,
-					IsMember:   true,
-					IsAdmin:    cp.Wxid == admin,
-					JoinTime:   time.Now().Local(),
-					LastActive: time.Now().Local(),
+					GroupId:        wxId,
+					Account:        cp.Account,
+					HeadImage:      cp.HeadImage,
+					Nickname:       nickname,
+					WechatNickname: cp.Nickname,
+					Wxid:           cp.Wxid,
+					IsMember:       true,
+					IsAdmin:        cp.Wxid == admin,
+					JoinTime:       time.Now().Local(),
+					LastActive:     time.Now().Local(),
 				}).Error
 				if err != nil {
 					log.Printf("新增群成员失败: %s", err.Error())
@@ -291,5 +325,7 @@ func SyncGroupMembers(wxId string) (err error) {
 			}
 		}
 	}
+	invalidateGroupMessageIdentityCache(wxId)
+	refreshGroupMemberContactCache(wxId)
 	return nil
 }

@@ -2,6 +2,8 @@ package watergroup
 
 import (
 	"github.com/loks666/FlyAI/client"
+	"github.com/loks666/FlyAI/common/current"
+	"github.com/loks666/FlyAI/model/entity"
 	"gorm.io/gorm"
 	"time"
 )
@@ -48,6 +50,7 @@ func getRankData(groupId, date string, reference ...time.Time) (rank []rankUser,
 		Where("tm.type IN (?)", rankMessageTypes).
 		Group("tm.group_user, tgu.nickname").
 		Order("`count` DESC")
+	tx = excludeRankUser(tx, current.GetRobotInfo().WxId)
 
 	now := time.Now()
 	if len(reference) > 0 {
@@ -58,6 +61,40 @@ func getRankData(groupId, date string, reference ...time.Time) (rank []rankUser,
 	// 查询指定时间段全部数据
 	err = tx.Find(&rank).Error
 	return
+}
+
+func excludeRankUser(tx *gorm.DB, selfId string) *gorm.DB {
+	if selfId == "" {
+		return tx
+	}
+	return tx.Where("tm.group_user <> ?", selfId)
+}
+
+// countRankGroupUsers returns both the displayed current-member count (which
+// includes FlyAI) and the ranking-eligible count (which excludes FlyAI).
+func countRankGroupUsers(groupId string) (currentCount, eligibleCount int64, err error) {
+	baseQuery := func() *gorm.DB {
+		return client.MySQL.Model(&entity.GroupUser{}).
+			Where("group_id = ?", groupId).
+			Where("is_member IS TRUE")
+	}
+	if err = baseQuery().Distinct("wxid").Count(&currentCount).Error; err != nil {
+		return
+	}
+	tx := baseQuery()
+	if selfId := current.GetRobotInfo().WxId; selfId != "" {
+		tx = tx.Where("wxid <> ?", selfId)
+	}
+	err = tx.Distinct("wxid").Count(&eligibleCount).Error
+	return
+}
+
+func rankBadge(index int) string {
+	badges := [...]string{"🥇", "🥈", "🥉", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣", "🔟"}
+	if index >= 0 && index < len(badges) {
+		return badges[index]
+	}
+	return "🏆"
 }
 
 func applyRankDateFilter(tx *gorm.DB, date string, now time.Time) *gorm.DB {

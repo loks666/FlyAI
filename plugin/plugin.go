@@ -2,6 +2,11 @@ package plugin
 
 import (
 	"github.com/loks666/FlyAI/model/dto"
+	"hash/fnv"
+	"log"
+	"os"
+	"strconv"
+	"sync"
 )
 
 // MessageHandler 消息处理函数
@@ -95,8 +100,10 @@ type matchNodes []*matchNode
 //	bot := DefaultBot()
 //	bot.MessageHandler = DispatchMessage(dispatcher)
 type MessageMatchDispatcher struct {
-	async      bool
-	matchNodes matchNodes
+	async        bool
+	matchNodes   matchNodes
+	workerOnce   sync.Once
+	workerQueues []chan *MessageContext
 }
 
 // NewMessageMatchDispatcher Constructor
@@ -107,6 +114,9 @@ func NewMessageMatchDispatcher() *MessageMatchDispatcher {
 // SetAsync 设置是否异步处理
 func (m *MessageMatchDispatcher) SetAsync(async bool) {
 	m.async = async
+	if async {
+		m.startWorkers()
+	}
 }
 
 // Dispatch impl MessageDispatcher
@@ -122,10 +132,60 @@ func (m *MessageMatchDispatcher) Dispatch(msg *dto.Message) {
 	}
 	ctx := &MessageContext{Message: msg, messageHandlers: group}
 	if m.async {
-		go m.do(ctx)
+		m.startWorkers()
+		m.workerQueues[m.workerIndex(msg)] <- ctx
 	} else {
 		m.do(ctx)
 	}
+}
+
+func positiveEnv(name string, fallback int) int {
+	value, err := strconv.Atoi(os.Getenv(name))
+	if err != nil || value <= 0 {
+		return fallback
+	}
+	return value
+}
+
+func (m *MessageMatchDispatcher) startWorkers() {
+	m.workerOnce.Do(func() {
+		workerCount := positiveEnv("PLUGIN_WORKERS", 4)
+		queueSize := positiveEnv("PLUGIN_QUEUE_SIZE", 500)
+		perWorkerQueue := queueSize / workerCount
+		if perWorkerQueue < 1 {
+			perWorkerQueue = 1
+		}
+		m.workerQueues = make([]chan *MessageContext, workerCount)
+		for index := range m.workerQueues {
+			queue := make(chan *MessageContext, perWorkerQueue)
+			m.workerQueues[index] = queue
+			go func(jobs <-chan *MessageContext) {
+				for ctx := range jobs {
+					m.doSafely(ctx)
+				}
+			}(queue)
+		}
+		log.Printf("消息插件工作池已启动: workers=%d queue=%d", workerCount, queueSize)
+	})
+}
+
+func (m *MessageMatchDispatcher) doSafely(ctx *MessageContext) {
+	defer func() {
+		if recovered := recover(); recovered != nil {
+			log.Printf("消息插件工作器发生异常: %v", recovered)
+		}
+	}()
+	m.do(ctx)
+}
+
+func (m *MessageMatchDispatcher) workerIndex(msg *dto.Message) int {
+	key := msg.FromUser
+	if key == "" {
+		key = msg.GroupUser
+	}
+	hasher := fnv.New32a()
+	_, _ = hasher.Write([]byte(key))
+	return int(hasher.Sum32() % uint32(len(m.workerQueues)))
 }
 
 func (m *MessageMatchDispatcher) do(ctx *MessageContext) {

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/go-resty/resty/v2"
+	"github.com/loks666/FlyAI/common/applog"
 	"github.com/loks666/FlyAI/common/constant"
 	"github.com/loks666/FlyAI/config"
 	"github.com/loks666/FlyAI/model/dto"
@@ -29,7 +30,7 @@ func GetFriendList() (friends []dto.FriendItem, err error) {
 		log.Printf("获取好友列表失败: %s", err.Error())
 		return
 	}
-	log.Printf("获取好友列表结果: %s", resp.String())
+	applog.ContactSyncPrintf("获取好友列表结果: %s", resp.String())
 	if resp.IsError() {
 		return nil, errors.New("微信桥接服务返回异常状态")
 	}

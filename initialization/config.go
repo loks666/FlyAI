@@ -5,6 +5,7 @@ import (
 	"github.com/loks666/FlyAI/client"
 	"github.com/loks666/FlyAI/config"
 	"github.com/loks666/FlyAI/model/entity"
+	"github.com/loks666/FlyAI/service"
 	"github.com/spf13/viper"
 	"log"
 )
@@ -59,6 +60,24 @@ func ensureSchema() {
 			log.Panicf("新增群成员微信昵称字段失败: %v", err)
 		}
 		log.Printf("数据库升级完成: 已新增群成员微信昵称字段")
+	}
+	messageIdentityColumns := []struct {
+		field string
+		label string
+	}{
+		{field: "SenderNickname", label: "消息发送者微信昵称"},
+		{field: "SenderGroupNickname", label: "消息发送者群内昵称"},
+		{field: "SenderWechatAccount", label: "消息发送者微信号"},
+		{field: "GroupNickname", label: "消息群聊名称"},
+	}
+	for _, column := range messageIdentityColumns {
+		if migrator.HasColumn(&entity.Message{}, column.field) {
+			continue
+		}
+		if err := migrator.AddColumn(&entity.Message{}, column.field); err != nil {
+			log.Panicf("新增%s字段失败: %v", column.label, err)
+		}
+		log.Printf("数据库升级完成: 已新增%s字段", column.label)
 	}
 	hadFeatureSchedule := migrator.HasColumn(&entity.FeatureSetting{}, "Schedule")
 	hadMessageThreshold := migrator.HasColumn(&entity.FeatureSetting{}, "MessageThreshold")
@@ -119,7 +138,8 @@ func InitConfig() {
 	// 初始化数据库连接
 	client.InitMySQLClient()
 	ensureSchema()
-	//redis.Init()
+	client.InitRedisClient()
+	go service.WarmContactCache()
 
 	// 下面的代码是配置变动之后自动刷新的
 	vp.WatchConfig()
@@ -134,7 +154,8 @@ func InitConfig() {
 			// 初始化数据库连接
 			client.InitMySQLClient()
 			ensureSchema()
-			//redis.Init()
+			client.InitRedisClient()
+			go service.WarmContactCache()
 		}
 	})
 }

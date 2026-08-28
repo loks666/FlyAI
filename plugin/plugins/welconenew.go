@@ -39,5 +39,5 @@ func WelcomeNew(m *plugin.MessageContext) {
 	}
 
 	// 刷新群成员列表
-	go service.SyncGroupMembers(m.FromUser)
+	_ = service.SyncGroupMembers(m.FromUser)
 }

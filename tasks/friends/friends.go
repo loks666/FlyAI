@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/go-resty/resty/v2"
 	"github.com/loks666/FlyAI/client"
+	"github.com/loks666/FlyAI/common/applog"
 	"github.com/loks666/FlyAI/common/constant"
 	"github.com/loks666/FlyAI/common/types"
 	"github.com/loks666/FlyAI/config"
@@ -35,7 +36,7 @@ func Sync() {
 		log.Printf("获取好友列表失败: %s", err.Error())
 		return
 	}
-	log.Printf("获取好友列表结果: %s", resp.String())
+	applog.ContactSyncPrintf("获取好友列表结果: %s", resp.String())
 
 	tx := client.MySQL.Begin()
 	defer tx.Commit()
@@ -188,7 +189,7 @@ func Sync() {
 		log.Printf("清理好友失败: %s", err.Error())
 	}
 
-	log.Println("同步好友列表完成")
+	applog.ContactSyncPrintln("同步好友列表完成")
 }
 
 // syncGroupUsers

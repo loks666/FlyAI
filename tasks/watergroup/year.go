@@ -2,9 +2,7 @@ package watergroup
 
 import (
 	"fmt"
-	"github.com/loks666/FlyAI/client"
 	"github.com/loks666/FlyAI/config"
-	"github.com/loks666/FlyAI/model/entity"
 	"github.com/loks666/FlyAI/service"
 	"github.com/loks666/FlyAI/utils"
 	"log"
@@ -23,7 +21,10 @@ func Year() {
 
 	for _, group := range groups {
 		// 消息统计
-		dealYear(group.Wxid)
+		if _, err := SendYearToGroup(group.Wxid); err != nil {
+			log.Printf("发送群[%s]年度排行失败: %v", group.Wxid, err)
+			continue
+		}
 
 		res, ok := config.Conf.Resource["wordcloud"]
 		if !ok {
@@ -38,31 +39,23 @@ func Year() {
 	}
 }
 
-// dealYear
-// @description: 处理年度排行榜
-// @param gid
-func dealYear(gid string) {
+// SendYearToGroup builds and synchronously sends last year's ranking.
+func SendYearToGroup(gid string) (string, error) {
 	notifyMsgs := []string{"#年度水群排行榜"}
 
 	// 获取上周消息总数
 	records, err := getRankData(gid, "year")
 	if err != nil {
-		log.Printf("获取去年消息排行失败, 错误信息: %v", err)
-		return
+		return "", fmt.Errorf("获取去年消息排行失败: %w", err)
 	}
 	log.Printf("去年消息总数: %+v", records)
 	// 莫得消息，直接返回
 	if len(records) == 0 {
-		log.Printf("去年本群[%s]无对话记录", gid)
-		return
+		return "", fmt.Errorf("去年没有可排行的消息")
 	}
 
 	// 查询群成员总数
-	var groupUsers int64
-	err = client.MySQL.Model(&entity.GroupUser{}).
-		Where("group_id = ?", gid).
-		Where("is_member IS TRUE").
-		Count(&groupUsers).Error
+	_, groupUsers, err := countRankGroupUsers(gid)
 	if err != nil {
 		log.Printf("查询群成员总数失败, 错误信息: %v", err)
 	}
@@ -115,18 +108,14 @@ func dealYear(gid string) {
 			break
 		}
 		log.Printf("账号: %s[%s] -> %d", r.Nickname, r.GroupUser, r.Count)
-		badge := "🏆"
-		switch i {
-		case 0:
-			badge = "🥇"
-		case 1:
-			badge = "🥈"
-		case 2:
-			badge = "🥉"
-		}
+		badge := rankBadge(i)
 		notifyMsgs = append(notifyMsgs, fmt.Sprintf("%s %s -> %d条", badge, r.Nickname, r.Count))
 	}
 
-	log.Printf("排行榜: \n%s", strings.Join(notifyMsgs, "\n"))
-	go utils.SendMessage(gid, "", strings.Join(notifyMsgs, "\n"), 0)
+	message := strings.Join(notifyMsgs, "\n")
+	log.Printf("排行榜: \n%s", message)
+	if err := utils.SendMessage(gid, "", message, 0); err != nil {
+		return message, err
+	}
+	return message, nil
 }

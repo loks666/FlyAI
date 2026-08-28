@@ -2,9 +2,7 @@ package watergroup
 
 import (
 	"fmt"
-	"github.com/loks666/FlyAI/client"
 	"github.com/loks666/FlyAI/config"
-	"github.com/loks666/FlyAI/model/entity"
 	"github.com/loks666/FlyAI/service"
 	"github.com/loks666/FlyAI/utils"
 	"log"
@@ -23,7 +21,10 @@ func Month() {
 
 	for _, group := range groups {
 		// 消息统计
-		dealMonth(group.Wxid)
+		if _, err := SendMonthToGroup(group.Wxid); err != nil {
+			log.Printf("发送群[%s]月排行失败: %v", group.Wxid, err)
+			continue
+		}
 
 		res, ok := config.Conf.Resource["wordcloud"]
 		if !ok {
@@ -38,32 +39,24 @@ func Month() {
 	}
 }
 
-// dealMonth
-// @description: 处理请求
-// @param gid
-func dealMonth(gid string) {
+// SendMonthToGroup builds and synchronously sends last month's ranking.
+func SendMonthToGroup(gid string) (string, error) {
 	monthStr := time.Now().Local().AddDate(0, 0, -1).Format("2006年01月")
 	notifyMsgs := []string{fmt.Sprintf("#%s水群排行榜", monthStr)}
 
 	// 获取上月消息总数
 	records, err := getRankData(gid, "month")
 	if err != nil {
-		log.Printf("获取上月消息排行失败, 错误信息: %v", err)
-		return
+		return "", fmt.Errorf("获取上月消息排行失败: %w", err)
 	}
 	log.Printf("上月消息总数: %+v", records)
 	// 莫得消息，直接返回
 	if len(records) == 0 {
-		log.Printf("上月群[%s]无对话记录", gid)
-		return
+		return "", fmt.Errorf("上月没有可排行的消息")
 	}
 
 	// 查询群成员总数
-	var groupUsers int64
-	err = client.MySQL.Model(&entity.GroupUser{}).
-		Where("group_id = ?", gid).
-		Where("is_member IS TRUE").
-		Count(&groupUsers).Error
+	_, groupUsers, err := countRankGroupUsers(gid)
 	if err != nil {
 		log.Printf("查询群成员总数失败, 错误信息: %v", err)
 	}
@@ -109,20 +102,16 @@ func dealMonth(gid string) {
 		}
 
 		log.Printf("账号: %s[%s] -> %d", r.Nickname, r.GroupUser, r.Count)
-		badge := "🏆"
-		switch i {
-		case 0:
-			badge = "🥇"
-		case 1:
-			badge = "🥈"
-		case 2:
-			badge = "🥉"
-		}
+		badge := rankBadge(i)
 		notifyMsgs = append(notifyMsgs, fmt.Sprintf("%s %s -> %d条", badge, r.Nickname, r.Count))
 	}
 
 	notifyMsgs = append(notifyMsgs, fmt.Sprintf(" \n🎉感谢以上群友%s对群活跃做出的卓越贡献，也请未上榜的群友多多反思。", monthStr))
 
-	log.Printf("排行榜: \n%s", strings.Join(notifyMsgs, "\n"))
-	go utils.SendMessage(gid, "", strings.Join(notifyMsgs, "\n"), 0)
+	message := strings.Join(notifyMsgs, "\n")
+	log.Printf("排行榜: \n%s", message)
+	if err := utils.SendMessage(gid, "", message, 0); err != nil {
+		return message, err
+	}
+	return message, nil
 }

@@ -174,9 +174,13 @@ func AI(m *plugin.MessageContext) {
 	replyMessage.CreateTime = int(time.Now().Local().Unix())
 	replyMessage.CreateAt = time.Now().Local()
 	replyMessage.Content = resp.Choices[0].Message.Content
-	replyMessage.FromUser = current.GetRobotInfo().WxId // 发信人是机器人
-	replyMessage.GroupUser = m.GroupUser                // 群成员
-	replyMessage.ToUser = m.FromUser                    // 收信人是发信人
+	robotInfo := current.GetRobotInfo()
+	replyMessage.FromUser = robotInfo.WxId // 发信人是机器人
+	replyMessage.GroupUser = m.GroupUser   // 群成员
+	replyMessage.SenderNickname = robotInfo.Name
+	replyMessage.SenderGroupNickname = robotInfo.Name
+	replyMessage.GroupNickname = m.GroupNickname
+	replyMessage.ToUser = m.FromUser // 收信人是发信人
 	replyMessage.Type = types.MsgTypeText
 	service.SaveMessage(replyMessage) // 保存消息
 

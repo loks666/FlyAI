@@ -38,13 +38,13 @@
           <article class="rounded-xl border border-gray-200 bg-gray-50/60 p-5">
             <div class="flex items-start justify-between gap-4">
               <div>
-                <h3 class="font-semibold text-gray-900">周报推送时间</h3>
+                <h3 class="font-semibold text-gray-900">排行榜推送时间</h3>
                 <p class="mt-1 text-sm leading-6 text-gray-500">推送最近 7 天的群聊活跃排行榜。</p>
               </div>
               <span class="flex-none whitespace-nowrap rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700">全局</span>
             </div>
             <div class="mt-5 flex flex-wrap items-center gap-3">
-              <label class="sr-only" for="weekly-schedule">周报推送周期</label>
+              <label class="sr-only" for="weekly-schedule">排行榜推送周期</label>
               <select id="weekly-schedule" data-testid="weekly-schedule" class="rounded-lg border-gray-300 text-sm focus:border-green-500 focus:ring-green-500">{{template "scheduleOptions" .weeklySchedule}}</select>
               <input id="weekly-time" data-testid="weekly-time" type="time" value="{{.weeklyTime}}" class="rounded-lg border-gray-300 text-sm focus:border-green-500 focus:ring-green-500">
               <button type="button" data-testid="save-weekly-time" onclick="saveFeatureSetting('weekly', 'weekly-schedule', 'weekly-time', this)" class="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-500 disabled:opacity-50">保存计划</button>
@@ -83,9 +83,15 @@
             <h2 class="text-xl font-semibold text-gray-900">主人微信号</h2>
             <p class="mt-1 max-w-3xl text-sm leading-6 text-gray-500">仅支持机器人通讯录中的普通微信号。保存时自动绑定内部 wxid；只有绑定主人在群里发送以下命令才会执行。</p>
             <div class="mt-3 flex flex-wrap gap-2 text-xs text-gray-600">
-              <span class="rounded-full bg-gray-100 px-3 py-1.5">@{{.robotName}} /周报</span>
+              <span class="rounded-full bg-gray-100 px-3 py-1.5">@{{.robotName}} /昨排</span>
+              <span class="rounded-full bg-gray-100 px-3 py-1.5">@{{.robotName}} /周排</span>
+              <span class="rounded-full bg-gray-100 px-3 py-1.5">@{{.robotName}} /月排</span>
+              <span class="rounded-full bg-gray-100 px-3 py-1.5">@{{.robotName}} /年排</span>
+              <span class="rounded-full bg-gray-100 px-3 py-1.5">@{{.robotName}} /排行榜（周排）</span>
               <span class="rounded-full bg-gray-100 px-3 py-1.5">@{{.robotName}} /潜水</span>
               <span class="rounded-full bg-gray-100 px-3 py-1.5">@{{.robotName}} /热点</span>
+              <span class="rounded-full bg-gray-100 px-3 py-1.5">给我骂他@昵称1 @昵称2（可不艾特机器人）</span>
+              <span class="rounded-full bg-gray-100 px-3 py-1.5">给我骂他.@昵称1 @昵称2（摩斯密码）</span>
             </div>
           </div>
           <form class="flex w-full flex-col gap-2 sm:flex-row lg:max-w-md" onsubmit="addOwner(event)">

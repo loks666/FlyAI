@@ -120,7 +120,7 @@ function Write-RuntimeConfig {
     $config = @"
 system:
   alApiToken: $(ConvertTo-YamlScalar (Get-Setting "ALAPI_TOKEN" "xxx"))
-  domain: $(ConvertTo-YamlScalar (Get-Setting "SYSTEM_DOMAIN" "http://127.0.0.1:8080"))
+  domain: $(ConvertTo-YamlScalar (Get-Setting "SYSTEM_DOMAIN" "http://127.0.0.1:9527"))
   newFriendNotify:
     enable: $((Get-BoolSetting "NEW_FRIEND_NOTIFY_ENABLE").ToString().ToLowerInvariant())
     toUser:
@@ -145,6 +145,13 @@ mysql:
   user: $(ConvertTo-YamlScalar (Get-Setting "MYSQL_USER" "wechat"))
   password: $(ConvertTo-YamlScalar (Get-Setting "MYSQL_PASSWORD" "wechat"))
   db: $(ConvertTo-YamlScalar (Get-Setting "MYSQL_DATABASE" "wechat"))
+
+redis:
+  enable: $((Get-BoolSetting "REDIS_ENABLE" $true).ToString().ToLowerInvariant())
+  host: $(ConvertTo-YamlScalar (Get-Setting "REDIS_HOST" "127.0.0.1"))
+  port: $(Get-Setting "REDIS_PORT" "6379")
+  password: $(ConvertTo-YamlScalar (Get-Setting "REDIS_PASSWORD" "flyai-redis"))
+  db: $(Get-Setting "REDIS_DB" "0")
 
 task:
   enable: $((Get-BoolSetting "TASK_ENABLE" $true).ToString().ToLowerInvariant())
@@ -245,7 +252,7 @@ function Invoke-Compose([string[]]$Arguments) {
 }
 
 function Wait-MySQL {
-    $deadline = [DateTime]::UtcNow.AddMinutes(3)
+    $deadline = [DateTime]::UtcNow.AddMinutes(10)
     do {
         $containerId = ([string](& $script:DockerExe compose --project-name flyai --env-file $EnvFile -f $ComposeFile ps -q mysql)).Trim()
         if ($containerId) {
@@ -255,7 +262,7 @@ function Wait-MySQL {
         }
         Start-Sleep -Seconds 3
     } while ([DateTime]::UtcNow -lt $deadline)
-    throw "MySQL 未在 3 分钟内就绪。"
+    throw "MySQL 未在 10 分钟内就绪。首次初始化在 Windows 目录挂载下可能需要数分钟。"
 }
 
 function Get-ArchitectureName {
@@ -295,21 +302,39 @@ function Get-UvExecutable {
     return $uvExe
 }
 
+function Get-SHA256([string]$Path) {
+    $stream = [IO.File]::OpenRead($Path)
+    try {
+        $sha256 = [Security.Cryptography.SHA256]::Create()
+        try {
+            return ([BitConverter]::ToString($sha256.ComputeHash($stream))).Replace("-", "")
+        } finally {
+            $sha256.Dispose()
+        }
+    } finally {
+        $stream.Dispose()
+    }
+}
+
 function Initialize-Python {
-    $venv = Join-Path $RuntimeDir "venv"
+    $pythonInstallDir = Join-Path $RuntimeDir "python"
+    $venv = Join-Path $RuntimeDir "venv-local"
     $python = Join-Path $venv "Scripts\python.exe"
     $uv = Get-UvExecutable
     $version = Get-Setting "PYTHON_VERSION" "3.12"
     if (!(Test-Path -LiteralPath $python)) {
         Write-Step "首次运行：准备 Python $version"
-        & $uv python install $version
+        & $uv python install $version --install-dir $pythonInstallDir --no-bin --no-registry
         if ($LASTEXITCODE -ne 0) { throw "Python 下载失败。" }
-        & $uv venv --python $version $venv
+        $basePython = Get-ChildItem -LiteralPath $pythonInstallDir -Filter "python.exe" -Recurse -File |
+            Select-Object -First 1 -ExpandProperty FullName
+        if (!$basePython) { throw "便携式 Python 安装完成后未找到 python.exe。" }
+        & $uv venv --python $basePython $venv
         if ($LASTEXITCODE -ne 0) { throw "Python 虚拟环境创建失败。" }
     }
     $requirements = Join-Path $Root "bridge\requirements.txt"
-    $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $requirements).Hash
-    $stamp = Join-Path $RuntimeDir "requirements.sha256"
+    $hash = Get-SHA256 $requirements
+    $stamp = Join-Path $venv "requirements.sha256"
     $installedHash = if (Test-Path -LiteralPath $stamp) { (Get-Content -LiteralPath $stamp -Raw).Trim() } else { "" }
     if ($hash -ne $installedHash) {
         Write-Step "安装微信桥接器依赖"
@@ -318,6 +343,74 @@ function Initialize-Python {
         Set-Content -LiteralPath $stamp -Value $hash -Encoding ASCII
     }
     return $python
+}
+
+function Wait-Redis {
+    $deadline = [DateTime]::UtcNow.AddMinutes(3)
+    do {
+        $containerId = ([string](& $script:DockerExe compose --project-name flyai --env-file $EnvFile -f $ComposeFile ps -q redis)).Trim()
+        if ($containerId) {
+            $health = ([string](& $script:DockerExe inspect --format "{{.State.Health.Status}}" $containerId 2>$null)).Trim()
+            if ($health -eq "healthy") { return }
+            if ($health -eq "unhealthy") { throw "Redis 容器健康检查失败，请查看 Docker 日志。" }
+        }
+        Start-Sleep -Seconds 2
+    } while ([DateTime]::UtcNow -lt $deadline)
+    throw "Redis 未在 3 分钟内就绪。"
+}
+
+function Ensure-BridgeFirewall {
+    $pythonInstallDir = Join-Path $RuntimeDir "python"
+    $basePython = Get-ChildItem -LiteralPath $pythonInstallDir -Filter "python.exe" -Recurse -File |
+        Select-Object -First 1 -ExpandProperty FullName
+    if (!$basePython) { throw "未找到桥接器使用的便携式 Python。" }
+
+    $bridgePort = [int](Get-Setting "BRIDGE_HTTP_PORT" "19089")
+    $ruleName = "FlyAI-WeChat-Bridge-Local-$bridgePort"
+    $matchingRule = Get-NetFirewallRule -DisplayName $ruleName -ErrorAction SilentlyContinue |
+        Where-Object { $_.Enabled -eq "True" } |
+        Get-NetFirewallApplicationFilter -ErrorAction SilentlyContinue |
+        Where-Object { $_.Program -and $_.Program.Equals($basePython, [StringComparison]::OrdinalIgnoreCase) } |
+        Select-Object -First 1
+    if ($matchingRule) { return }
+
+    Write-Step "配置微信桥接器本机访问权限（Windows 可能请求管理员确认）"
+    $escapedName = $ruleName.Replace("'", "''")
+    $escapedPython = $basePython.Replace("'", "''")
+    $firewallScript = @"
+`$ErrorActionPreference = 'Stop'
+Get-NetFirewallRule -DisplayName '$escapedName' -ErrorAction SilentlyContinue | Remove-NetFirewallRule
+New-NetFirewallRule -DisplayName '$escapedName' -Direction Inbound -Action Allow -Enabled True -Profile Any -Protocol TCP -LocalAddress 127.0.0.1 -RemoteAddress 127.0.0.1 -LocalPort $bridgePort -Program '$escapedPython' | Out-Null
+"@
+    $encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($firewallScript))
+    $elevated = Start-Process -FilePath "powershell.exe" -ArgumentList "-NoProfile -NonInteractive -EncodedCommand $encoded" -Verb RunAs -WindowStyle Hidden -Wait -PassThru
+    if ($elevated.ExitCode -ne 0) { throw "微信桥接器本机访问权限配置失败。" }
+    Write-Ok "微信桥接器本机访问权限已配置"
+}
+
+function Ensure-HubFirewall([string]$HubExe) {
+    $httpPort = [int](Get-Setting "HUB_HTTP_PORT" "9527")
+    $ingestPort = [int](Get-Setting "HUB_INGEST_PORT" "19099")
+    $ruleName = "FlyAI-Go-Service-Local-$httpPort-$ingestPort"
+    $matchingRule = Get-NetFirewallRule -DisplayName $ruleName -ErrorAction SilentlyContinue |
+        Where-Object { $_.Enabled -eq "True" } |
+        Get-NetFirewallApplicationFilter -ErrorAction SilentlyContinue |
+        Where-Object { $_.Program -and $_.Program.Equals($HubExe, [StringComparison]::OrdinalIgnoreCase) } |
+        Select-Object -First 1
+    if ($matchingRule) { return }
+
+    Write-Step "配置 FlyAI 服务本机访问权限（Windows 可能请求管理员确认）"
+    $escapedName = $ruleName.Replace("'", "''")
+    $escapedHubExe = $HubExe.Replace("'", "''")
+    $firewallScript = @"
+`$ErrorActionPreference = 'Stop'
+Get-NetFirewallRule -DisplayName '$escapedName' -ErrorAction SilentlyContinue | Remove-NetFirewallRule
+New-NetFirewallRule -DisplayName '$escapedName' -Direction Inbound -Action Allow -Enabled True -Profile Any -Protocol TCP -LocalAddress 127.0.0.1 -RemoteAddress 127.0.0.1 -LocalPort $httpPort,$ingestPort -Program '$escapedHubExe' | Out-Null
+"@
+    $encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($firewallScript))
+    $elevated = Start-Process -FilePath "powershell.exe" -ArgumentList "-NoProfile -NonInteractive -EncodedCommand $encoded" -Verb RunAs -WindowStyle Hidden -Wait -PassThru
+    if ($elevated.ExitCode -ne 0) { throw "FlyAI 服务本机访问权限配置失败。" }
+    Write-Ok "FlyAI 服务本机访问权限已配置"
 }
 
 function Build-Hub([string]$GoExe, [bool]$Force) {
@@ -388,6 +481,10 @@ function Start-Bridge([string]$PythonExe) {
         Write-Ok "微信桥接器已在运行"
         return
     }
+    if (Test-Tcp "127.0.0.1" $bridgePort) {
+        Write-Warn "端口 $bridgePort 已被其他进程占用，已跳过微信桥接器启动。"
+        return
+    }
     $bridgeScript = Join-Path $Root "bridge\wechatauto_bridge.py"
     $workdir = Join-Path $RuntimeDir "bridge-state"
     $arguments = @(
@@ -396,7 +493,7 @@ function Start-Bridge([string]$PythonExe) {
         "--port", $bridgePort,
         "--ingest-host", "127.0.0.1",
         "--ingest-port", (Get-Setting "HUB_INGEST_PORT" "19099"),
-        "--monitor-url", (Quote-ProcessArgument ("http://127.0.0.1:" + (Get-Setting "HUB_HTTP_PORT" "8080") + "/api/monitor/groups")),
+        "--monitor-url", (Quote-ProcessArgument ("http://127.0.0.1:" + (Get-Setting "HUB_HTTP_PORT" "9527") + "/api/monitor/groups")),
         "--workdir", (Quote-ProcessArgument $workdir),
         "--poll", (Get-Setting "BRIDGE_POLL_SECONDS" "2")
     )
@@ -412,9 +509,14 @@ function Start-Bridge([string]$PythonExe) {
 }
 
 function Start-Hub([string]$HubExe) {
-    $httpPort = [int](Get-Setting "HUB_HTTP_PORT" "8080")
+    $httpPort = [int](Get-Setting "HUB_HTTP_PORT" "9527")
     if (Test-Tcp "127.0.0.1" $httpPort) {
-        Write-Ok "Go 服务已在运行"
+        Write-Warn "端口 $httpPort 已被占用，已跳过 Go 服务启动。"
+        return
+    }
+    $ingestPort = [int](Get-Setting "HUB_INGEST_PORT" "19099")
+    if (Test-Tcp "127.0.0.1" $ingestPort) {
+        Write-Warn "端口 $ingestPort 已被占用，已跳过 Go 服务启动。"
         return
     }
     Write-Step "启动 Go 服务"
@@ -455,7 +557,7 @@ function Stop-All {
         try {
             $script:DockerExe = Get-DockerExecutable
             & $script:DockerExe compose --project-name flyai --env-file $EnvFile -f $ComposeFile stop *> $null
-            Write-Ok "MySQL 容器已停止"
+            Write-Ok "MySQL 和 Redis 容器已停止"
         } catch {
             Write-Warn "未能停止 MySQL：$($_.Exception.Message)"
         }
@@ -465,11 +567,13 @@ function Stop-All {
 function Show-Status {
     Initialize-Environment
     $bridgePort = [int](Get-Setting "BRIDGE_HTTP_PORT" "19089")
-    $httpPort = [int](Get-Setting "HUB_HTTP_PORT" "8080")
+    $httpPort = [int](Get-Setting "HUB_HTTP_PORT" "9527")
     $mysqlPort = [int](Get-Setting "MYSQL_PORT" "3307")
+    $redisPort = [int](Get-Setting "REDIS_PORT" "6379")
     Write-Host "微信桥接器 : $(if (Test-Http "http://127.0.0.1:$bridgePort/health") { '运行中' } else { '未运行' })"
     Write-Host "Go 管理服务 : $(if (Test-Tcp '127.0.0.1' $httpPort) { '运行中' } else { '未运行' })"
     Write-Host "MySQL       : $(if (Test-Tcp '127.0.0.1' $mysqlPort) { '端口可访问' } else { '未运行' })"
+    Write-Host "Redis       : $(if (Test-Tcp '127.0.0.1' $redisPort) { '端口可访问' } else { '未运行' })"
     Write-Host "管理页面    : http://127.0.0.1:$httpPort"
 }
 
@@ -487,26 +591,46 @@ function Start-All([bool]$ForceUpdate) {
 
     $script:DockerExe = Get-DockerExecutable
     Wait-Docker $script:DockerExe
-    Write-Step "启动 MySQL"
-    Invoke-Compose @("up", "-d", "mysql")
+    Write-Step "启动 MySQL 和 Redis"
+    $composeServices = @("mysql")
+    $redisPort = [int](Get-Setting "REDIS_PORT" "6379")
+    $redisContainerId = ([string](& $script:DockerExe compose --project-name flyai --env-file $EnvFile -f $ComposeFile ps -q redis)).Trim()
+    $startRedis = (Get-BoolSetting "REDIS_ENABLE" $true)
+    if ($startRedis -and (Test-Tcp "127.0.0.1" $redisPort) -and !$redisContainerId) {
+        Write-Warn "端口 $redisPort 已被其他进程占用，已跳过 Redis 容器启动。"
+        $startRedis = $false
+    }
+    if ($startRedis) { $composeServices += "redis" }
+    Invoke-Compose (@("up", "-d") + $composeServices)
     Wait-MySQL
     Write-Ok "MySQL 已就绪"
+    if ($startRedis) {
+        Wait-Redis
+        Write-Ok "Redis 已就绪"
+    }
 
     $bridgePort = [int](Get-Setting "BRIDGE_HTTP_PORT" "19089")
     if (Test-Http "http://127.0.0.1:$bridgePort/health") {
         Write-Ok "微信桥接器已在运行"
+    } elseif (Test-Tcp "127.0.0.1" $bridgePort) {
+        Write-Warn "端口 $bridgePort 已被其他进程占用，已跳过微信桥接器启动。"
     } else {
         $pythonExe = Initialize-Python
+        Ensure-BridgeFirewall
         Start-Bridge $pythonExe
     }
 
-    $httpPort = [int](Get-Setting "HUB_HTTP_PORT" "8080")
+    $httpPort = [int](Get-Setting "HUB_HTTP_PORT" "9527")
+    $ingestPort = [int](Get-Setting "HUB_INGEST_PORT" "19099")
     $hubExe = Join-Path $BinDir "FlyAI.exe"
     if (Test-Tcp "127.0.0.1" $httpPort) {
-        Write-Ok "Go 服务已在运行"
+        Write-Warn "端口 $httpPort 已被占用，已跳过 Go 服务启动。"
+    } elseif (Test-Tcp "127.0.0.1" $ingestPort) {
+        Write-Warn "端口 $ingestPort 已被占用，已跳过 Go 服务启动。"
     } else {
         $goExe = Get-GoExecutable
         $hubExe = Build-Hub $goExe $ForceUpdate
+        Ensure-HubFirewall $hubExe
         Start-Hub $hubExe
     }
 

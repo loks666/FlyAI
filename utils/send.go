@@ -19,11 +19,16 @@ import (
 // @param toId
 // @param atId
 // @param msg
-func SendMessage(toId, atId, msg string, retryCount int) (err error) {
+func SendMessage(toId, atId, msg string, retryCount int) error {
 	if flag, _ := strconv.ParseBool(os.Getenv("DONT_SEND")); flag {
-		return
+		return nil
 	}
+	return enqueueSend(func() error {
+		return sendMessageNow(toId, atId, msg, retryCount)
+	})
+}
 
+func sendMessageNow(toId, atId, msg string, retryCount int) (err error) {
 	if retryCount > 5 {
 		log.Printf("重试五次失败，停止发送")
 		err = errors.New("重试五次失败，停止发送")
@@ -62,7 +67,7 @@ func SendMessage(toId, atId, msg string, retryCount int) (err error) {
 		log.Printf("发送文本消息失败: %s", err.Error())
 		// 休眠五秒后重新发送
 		time.Sleep(5 * time.Second)
-		return SendMessage(toId, atId, msg, retryCount+1)
+		return sendMessageNow(toId, atId, msg, retryCount+1)
 	}
 	log.Printf("发送文本消息结果: %s", resp.String())
 	if resp.IsError() {
@@ -81,6 +86,96 @@ func SendMessage(toId, atId, msg string, retryCount int) (err error) {
 	return
 }
 
+// SendFile sends a local TXT file through the Windows WeChat bridge.
+func SendFile(toId, filePath string, retryCount int) (err error) {
+	if flag, _ := strconv.ParseBool(os.Getenv("DONT_SEND")); flag {
+		return nil
+	}
+	return enqueueSend(func() error {
+		return sendFileNow(toId, filePath, retryCount)
+	})
+}
+
+func sendFileNow(toId, filePath string, retryCount int) (err error) {
+	if retryCount > 5 {
+		return errors.New("重试五次失败，停止发送文件")
+	}
+
+	param := map[string]any{
+		"wxid":     toId,
+		"filePath": filePath,
+	}
+	var result dto.Response[struct {
+		Sent   bool   `json:"sent"`
+		Detail string `json:"detail"`
+	}]
+	resp, requestErr := resty.New().R().
+		SetHeader("Content-Type", "application/json; charset=utf-8").
+		SetResult(&result).
+		SetBody(param).
+		Post(config.Conf.Wechat.GetURL("/api/sendFileMsg"))
+	if requestErr != nil {
+		log.Printf("发送文件失败: %s", requestErr.Error())
+		time.Sleep(5 * time.Second)
+		return sendFileNow(toId, filePath, retryCount+1)
+	}
+	log.Printf("发送文件结果: %s", resp.String())
+	if resp.IsError() {
+		return fmt.Errorf("微信桥接服务返回 HTTP %d", resp.StatusCode())
+	}
+	if result.Code != 1 || !result.Data.Sent {
+		detail := result.Data.Detail
+		if detail == "" {
+			detail = result.Msg
+		}
+		if detail == "" {
+			detail = "微信桥接服务未确认文件发送成功"
+		}
+		return errors.New(detail)
+	}
+	return nil
+}
+
+// SendFavoriteEmotion sends the first sticker from the signed-in WeChat
+// client's custom-emotion collection.
+func SendFavoriteEmotion(toId string) error {
+	if flag, _ := strconv.ParseBool(os.Getenv("DONT_SEND")); flag {
+		return nil
+	}
+	return enqueueSend(func() error {
+		var result dto.Response[struct {
+			Sent   bool   `json:"sent"`
+			Detail string `json:"detail"`
+		}]
+		resp, err := resty.New().R().
+			SetHeader("Content-Type", "application/json; charset=utf-8").
+			SetResult(&result).
+			SetBody(map[string]any{"wxid": toId}).
+			Post(config.Conf.Wechat.GetURL("/api/sendFavoriteEmotion"))
+		if err != nil {
+			return fmt.Errorf("发送收藏表情失败: %w", err)
+		}
+		if resp.IsError() {
+			return fmt.Errorf("微信桥接服务返回 HTTP %d", resp.StatusCode())
+		}
+		if result.Code != 1 || !result.Data.Sent {
+			detail := firstNonEmptySendDetail(result.Data.Detail, result.Msg, "微信桥接服务未确认收藏表情发送成功")
+			return errors.New(detail)
+		}
+		log.Printf("发送收藏表情结果: %s", resp.String())
+		return nil
+	})
+}
+
+func firstNonEmptySendDetail(values ...string) string {
+	for _, value := range values {
+		if value != "" {
+			return value
+		}
+	}
+	return "发送失败"
+}
+
 // SendImage
 // @description: 发送图片
 // @param toId string 群或者好友Id
@@ -90,7 +185,13 @@ func SendImage(toId, imgPath string, retryCount int) {
 	if flag, _ := strconv.ParseBool(os.Getenv("DONT_SEND")); flag {
 		return
 	}
+	_ = enqueueSend(func() error {
+		sendImageNow(toId, imgPath, retryCount)
+		return nil
+	})
+}
 
+func sendImageNow(toId, imgPath string, retryCount int) {
 	if retryCount > 5 {
 		log.Printf("重试五次失败，停止发送")
 		return
@@ -112,7 +213,8 @@ func SendImage(toId, imgPath string, retryCount int) {
 		log.Printf("发送图片消息失败: %s", err.Error())
 		// 休眠五秒后重新发送
 		time.Sleep(5 * time.Second)
-		SendImage(toId, imgPath, retryCount+1)
+		sendImageNow(toId, imgPath, retryCount+1)
+		return
 	}
 	log.Printf("发送图片消息结果: %s", resp.String())
 }
@@ -126,7 +228,13 @@ func SendEmotion(toId, emotionHash string, retryCount int) {
 	if flag, _ := strconv.ParseBool(os.Getenv("DONT_SEND")); flag {
 		return
 	}
+	_ = enqueueSend(func() error {
+		sendEmotionNow(toId, emotionHash, retryCount)
+		return nil
+	})
+}
 
+func sendEmotionNow(toId, emotionHash string, retryCount int) {
 	if retryCount > 5 {
 		log.Printf("重试五次失败，停止发送")
 		return
@@ -153,7 +261,8 @@ func SendEmotion(toId, emotionHash string, retryCount int) {
 		log.Printf("发送表情包消息失败: %s", err.Error())
 		// 休眠五秒后重新发送
 		time.Sleep(5 * time.Second)
-		SendImage(toId, emotionHash, retryCount+1)
+		sendEmotionNow(toId, emotionHash, retryCount+1)
+		return
 	}
 	log.Printf("发送表情包消息结果: %s", resp.String())
 }
@@ -165,6 +274,13 @@ func SendEmotion(toId, emotionHash string, retryCount int) {
 // @param retryCount 重试次数
 // @param isSure 是否确认删除
 func DeleteGroupMember(chatRoomId, memberIds string, retryCount int, isSure bool) {
+	_ = enqueueSend(func() error {
+		deleteGroupMemberNow(chatRoomId, memberIds, retryCount, isSure)
+		return nil
+	})
+}
+
+func deleteGroupMemberNow(chatRoomId, memberIds string, retryCount int, isSure bool) {
 	if retryCount > 5 {
 		log.Printf("重试五次失败，停止发送")
 		return
@@ -186,12 +302,13 @@ func DeleteGroupMember(chatRoomId, memberIds string, retryCount int, isSure bool
 		log.Printf("删除群成员失败: %s", err.Error())
 		// 休眠五秒后重新发送
 		time.Sleep(5 * time.Second)
-		DeleteGroupMember(chatRoomId, memberIds, retryCount+1, isSure)
+		deleteGroupMemberNow(chatRoomId, memberIds, retryCount+1, isSure)
+		return
 	}
 	log.Printf("[%s]删除群成员结果: %s", chatRoomId, resp.String())
 	// 这个逼接口要调用两次，第一次调用成功，第二次调用才会真正删除
 	if !isSure {
-		DeleteGroupMember(chatRoomId, memberIds, 5, true)
+		deleteGroupMemberNow(chatRoomId, memberIds, 5, true)
 	}
 }
 
@@ -200,6 +317,13 @@ func DeleteGroupMember(chatRoomId, memberIds string, retryCount int, isSure bool
 // @param chatRoomId string 群Id
 // @param retryCount int 重试次数
 func QuitChatroom(chatRoomId string, retryCount int) {
+	_ = enqueueSend(func() error {
+		quitChatroomNow(chatRoomId, retryCount)
+		return nil
+	})
+}
+
+func quitChatroomNow(chatRoomId string, retryCount int) {
 	if retryCount > 5 {
 		log.Printf("重试五次失败，停止发送")
 		return
@@ -220,7 +344,8 @@ func QuitChatroom(chatRoomId string, retryCount int) {
 		log.Printf("退群失败: %s", err.Error())
 		// 休眠五秒后重新发送
 		time.Sleep(5 * time.Second)
-		QuitChatroom(chatRoomId, retryCount+1)
+		quitChatroomNow(chatRoomId, retryCount+1)
+		return
 	}
 	log.Printf("退群结果: %s", resp.String())
 }
@@ -236,7 +361,13 @@ func SendPublicMsg(wxId, title, digest, url string, retryCount int) {
 	if flag, _ := strconv.ParseBool(os.Getenv("DONT_SEND")); flag {
 		return
 	}
+	_ = enqueueSend(func() error {
+		sendPublicMsgNow(wxId, title, digest, url, retryCount)
+		return nil
+	})
+}
 
+func sendPublicMsgNow(wxId, title, digest, url string, retryCount int) {
 	if retryCount > 5 {
 		log.Printf("重试五次失败，停止发送")
 		return
@@ -263,7 +394,8 @@ func SendPublicMsg(wxId, title, digest, url string, retryCount int) {
 		log.Printf("发送公众号消息失败: %s", err.Error())
 		// 休眠五秒后重新发送
 		time.Sleep(5 * time.Second)
-		SendPublicMsg(wxId, title, digest, url, retryCount+1)
+		sendPublicMsgNow(wxId, title, digest, url, retryCount+1)
+		return
 	}
 	log.Printf("发送公众号消息结果: %s", resp.String())
 }
