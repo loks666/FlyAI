@@ -11,13 +11,18 @@ func TestParseOwnerCommand(t *testing.T) {
 		want    string
 		ok      bool
 	}{
-		{"@Fly AI /昨排", OwnerCommandYesterday, true},
+		{"@Fly AI /昨排", "", false},
 		{"@Fly AI /排行榜", OwnerCommandWeekly, true},
+		{"@Fly AI 排行榜", OwnerCommandWeekly, true},
 		{"@Fly AI /周排", OwnerCommandWeekly, true},
-		{"@Fly AI /月排", OwnerCommandMonthly, true},
+		{"@Fly AI 周排", OwnerCommandWeekly, true},
+		{"@Fly AI /月排", "", false},
 		{"@Fly AI /年排", OwnerCommandYearly, true},
+		{"@Fly AI 年排", OwnerCommandYearly, true},
 		{"@Fly AI\u2005/潜水", OwnerCommandDormant, true},
+		{"@Fly AI\u2005潜水", OwnerCommandDormant, true},
 		{"  @Fly AI /热点  ", OwnerCommandNews, true},
+		{"  @Fly AI 热点  ", OwnerCommandNews, true},
 		{"@Fly AI 先发 /热点", OwnerCommandNews, true},
 		{"@Fly AI /排行榜 现在", OwnerCommandWeekly, true},
 		{"/排行榜", "", false},
@@ -68,9 +73,12 @@ func TestExtractRobotCommand(t *testing.T) {
 		ok      bool
 	}{
 		{"@Fly AI\u2005/排行榜", "/排行榜", true},
+		{"@Fly AI\u2005排行榜", "排行榜", true},
 		{"@Fly AI 你好 /潜水", "/潜水", true},
+		{"@Fly AI 潜水 现在", "潜水", true},
 		{"@Fly AI /未知 参数", "/未知", true},
 		{"@Fly AI 你好", "", false},
+		{"@Fly AI 你好 潜水", "", false},
 		{"你好 @Fly AI /热点", "", false},
 		{"@Fly AI2 /热点", "", false},
 	}

@@ -74,21 +74,22 @@ func Sync() {
 		if _, e := oldMap[friend.Wxid]; !e {
 			// 新增
 			err = tx.Create(&entity.Friend{
-				CustomAccount:  friend.CustomAccount,
-				Nickname:       friend.Nickname,
-				Pinyin:         friend.Pinyin,
-				PinyinAll:      friend.PinyinAll,
-				Wxid:           friend.Wxid,
-				IsOk:           true,
-				EnableAi:       config.Conf.System.DefaultRule.Ai,
-				EnableChatRank: config.Conf.System.DefaultRule.ChatRank,
-				EnableSummary:  config.Conf.System.DefaultRule.Summary,
-				EnableWelcome:  config.Conf.System.DefaultRule.Welcome,
-				EnableNews:     config.Conf.System.DefaultRule.News,
-				EnableHotTop:   config.Conf.System.DefaultRule.HotTop,
-				AiFreeLimit:    config.Conf.System.DefaultRule.AiFreeLimit,
-				ClearMember:    0,
-				LastActive:     types.DateTime(time.Now().Local()),
+				CustomAccount:    friend.CustomAccount,
+				Nickname:         friend.Nickname,
+				Pinyin:           friend.Pinyin,
+				PinyinAll:        friend.PinyinAll,
+				Wxid:             friend.Wxid,
+				IsOk:             true,
+				EnableAi:         config.Conf.System.DefaultRule.Ai,
+				EnableChatRank:   config.Conf.System.DefaultRule.ChatRank,
+				EnableWeeklyRank: config.Conf.System.DefaultRule.ChatRank,
+				EnableSummary:    config.Conf.System.DefaultRule.Summary,
+				EnableWelcome:    config.Conf.System.DefaultRule.Welcome,
+				EnableNews:       config.Conf.System.DefaultRule.News,
+				EnableHotTop:     config.Conf.System.DefaultRule.HotTop,
+				AiFreeLimit:      config.Conf.System.DefaultRule.AiFreeLimit,
+				ClearMember:      0,
+				LastActive:       types.DateTime(time.Now().Local()),
 			}).Error
 			if err != nil {
 				log.Printf("新增好友失败: %s", err.Error())

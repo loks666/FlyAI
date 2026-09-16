@@ -9,8 +9,10 @@ import (
 )
 
 var (
-	contactSyncLoggerOnce sync.Once
-	contactSyncLogger     *log.Logger
+	contactSyncLoggerOnce  sync.Once
+	contactSyncLogger      *log.Logger
+	contactCacheLoggerOnce sync.Once
+	contactCacheLogger     *log.Logger
 )
 
 func getContactSyncLogger() *log.Logger {
@@ -44,4 +46,22 @@ func ContactSyncPrintf(format string, values ...any) {
 
 func ContactSyncPrintln(values ...any) {
 	getContactSyncLogger().Println(values...)
+}
+
+func getContactCacheLogger() *log.Logger {
+	contactCacheLoggerOnce.Do(func() {
+		path := filepath.Join("logs", "contact-cache.log")
+		logger, _, err := newFileLogger(path)
+		if err != nil {
+			log.Printf("打开联系人缓存日志失败: %v", err)
+			contactCacheLogger = log.New(io.Discard, "", log.LstdFlags)
+			return
+		}
+		contactCacheLogger = logger
+	})
+	return contactCacheLogger
+}
+
+func ContactCachePrintf(format string, values ...any) {
+	getContactCacheLogger().Printf(format, values...)
 }

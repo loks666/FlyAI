@@ -81,7 +81,7 @@ Agent 工具需要明确支持以下口径，回答中必须回显统计口径�
 Windows WeChat 4.x
         |
         v
-Python Local Bridge -- TCP event --> Go Message Dispatcher
+FlyAI-Bridge (Nuitka EXE) -- TCP event --> Go Message Dispatcher
         ^                              |
         |                              v
         +---- HTTP text send ----- Agent Router

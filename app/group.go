@@ -20,7 +20,8 @@ func GetGroupUsers(ctx *gin.Context) {
 		return
 	}
 	// Always refresh this group's current membership before rendering the list.
-	service.SyncGroupMembers(p.GroupId)
+	// 桥接器未启动时仍然返回数据库里的历史成员，只是附带一条提示。
+	syncErr := service.SyncGroupMembers(p.GroupId)
 	// 查询数据
 	records, err := service.GetGroupUsersByGroupId(p.GroupId)
 	if err != nil {
@@ -39,6 +40,9 @@ func GetGroupUsers(ctx *gin.Context) {
 		}
 	}
 	result["isOkCount"] = len(currentMembers)
+	if syncErr != nil {
+		result["warning"] = syncErr.Error()
+	}
 
 	// 暂时先就这样写着，跑通了再改
 	ctx.JSON(http.StatusOK, result)

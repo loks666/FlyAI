@@ -28,6 +28,12 @@ func SyncWechatCatalog(ctx *gin.Context) {
 		manualWechatSyncState.Unlock()
 	}()
 
+	// 桥接器没起来时整段同步都会失败，提前给出明确原因而不是逐个群报连接错误。
+	if !service.BridgeReady() {
+		ctx.JSON(http.StatusServiceUnavailable, gin.H{"message": service.ErrBridgeNotRunning.Error()})
+		return
+	}
+
 	service.SyncFriendCatalog()
 	friends, groups, err := service.GetAllFriend()
 	if err != nil {

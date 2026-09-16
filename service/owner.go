@@ -122,3 +122,26 @@ func IsOwnerWxid(wxid string) bool {
 	}
 	return count > 0
 }
+
+// IsOwnerWechatAccount verifies the sender by their unique WeChat account.
+// Nicknames, group nicknames, and wxid are deliberately excluded from the
+// decision so a copied display name never grants owner permissions.
+func IsOwnerWechatAccount(wechatAccount string) bool {
+	wechatAccount = strings.TrimSpace(wechatAccount)
+	if wechatAccount == "" {
+		return false
+	}
+
+	var owner entity.Owner
+	if err := client.MySQL.
+		Where("wechat_account = ?", wechatAccount).
+		Take(&owner).Error; err != nil {
+		return false
+	}
+	return ownerWechatAccountMatches(owner, wechatAccount)
+}
+
+func ownerWechatAccountMatches(owner entity.Owner, wechatAccount string) bool {
+	return strings.TrimSpace(wechatAccount) != "" &&
+		owner.WechatAccount == strings.TrimSpace(wechatAccount)
+}

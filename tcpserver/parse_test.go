@@ -32,7 +32,7 @@ func TestMessageLogKeepsContentAndSenderBeforeSystemFields(t *testing.T) {
 	}`))
 	line := strings.TrimSpace(output.String())
 	fields := []string{
-		`"content":"hello\nworld"`,
+		`"content":"hello world"`,
 		`"senderNickname":"wxid_sender"`,
 		`"senderGroupNickname":""`,
 		`"senderWechatAccount":""`,
@@ -53,6 +53,19 @@ func TestMessageLogKeepsContentAndSenderBeforeSystemFields(t *testing.T) {
 			t.Fatalf("message log field %s is out of order: %s", field, line)
 		}
 		lastIndex = index
+	}
+	if strings.Contains(line, `\n`) {
+		t.Fatalf("message log should not contain escaped newlines: %s", line)
+	}
+}
+
+func TestSingleLineLogContentRemovesRedundantSenderEnvelope(t *testing.T) {
+	message := &dto.Message{
+		Content:   "wxid_sender:\nfirst line\r\nsecond line",
+		GroupUser: "wxid_sender",
+	}
+	if got := singleLineLogContent(message); got != "first line second line" {
+		t.Fatalf("singleLineLogContent() = %q", got)
 	}
 }
 

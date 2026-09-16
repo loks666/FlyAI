@@ -16,6 +16,10 @@ config.yaml
 data/
 .agents/
 
+# Bridge source lives in https://github.com/loks666/FlyAI-Bridge.
+# Keep a local bridge checkout out of this repository if one is placed here for development.
+/bridge/
+
 
 # ---------- Python ----------
 *$py.class
@@ -93,3 +97,7 @@ desktop.ini
 doc/~$*
 *.pptx
 Claude Conversations/
+
+# Committed Next.js static export consumed directly by the Go backend.
+!webui/frontend/dist/
+!webui/frontend/dist/**

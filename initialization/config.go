@@ -55,6 +55,32 @@ func ensureSchema() {
 		}
 		log.Printf("数据库升级完成: 已新增私聊指令开关")
 	}
+	rankColumns := []struct {
+		field       string
+		column      string
+		label       string
+		inheritRank bool
+	}{
+		{field: "EnableWeeklyRank", column: "enable_weekly_rank", label: "周排行榜", inheritRank: true},
+		{field: "EnableYearlyRank", column: "enable_yearly_rank", label: "年排行榜"},
+	}
+	for _, column := range rankColumns {
+		if migrator.HasColumn(&entity.Friend{}, column.field) {
+			continue
+		}
+		if err := migrator.AddColumn(&entity.Friend{}, column.field); err != nil {
+			log.Panicf("新增%s开关字段失败: %v", column.label, err)
+		}
+		if column.inheritRank {
+			if err := client.MySQL.Model(&entity.Friend{}).
+				Where("wxid LIKE '%@chatroom'").
+				Where("enable_chat_rank = 1").
+				Update(column.column, true).Error; err != nil {
+				log.Panicf("迁移%s开关失败: %v", column.label, err)
+			}
+		}
+		log.Printf("数据库升级完成: 已新增%s开关", column.label)
+	}
 	if !migrator.HasColumn(&entity.GroupUser{}, "WechatNickname") {
 		if err := migrator.AddColumn(&entity.GroupUser{}, "WechatNickname"); err != nil {
 			log.Panicf("新增群成员微信昵称字段失败: %v", err)
@@ -87,10 +113,27 @@ func ensureSchema() {
 	if err := client.MySQL.AutoMigrate(&entity.Owner{}); err != nil {
 		log.Panicf("创建主人配置表失败: %v", err)
 	}
+	if err := client.MySQL.AutoMigrate(&entity.BridgeSetting{}); err != nil {
+		log.Panicf("创建桥接器配置表失败: %v", err)
+	}
+	if _, err := service.GetBridgeSetting(); err != nil {
+		log.Panicf("初始化桥接器配置失败: %v", err)
+	}
 	defaults := []entity.FeatureSetting{
 		{Feature: "news", SendTime: "08:00", Schedule: "daily"},
 		{Feature: "weekly", SendTime: "09:30", Schedule: "monday"},
+		{Feature: "yearly", SendTime: "00:00", Schedule: "yearly"},
 		{Feature: "dormant", SendTime: "09:00", Schedule: "monday", MessageThreshold: 1},
+	}
+	if err := client.MySQL.Model(&entity.FeatureSetting{}).
+		Where("feature = ?", "yearly").
+		Updates(map[string]any{"send_time": "00:00", "schedule": "yearly"}).Error; err != nil {
+		log.Panicf("固定年排行榜推送时间失败: %v", err)
+	}
+	if err := client.MySQL.Model(&entity.Friend{}).
+		Where("enable_yesterday_rank = 1 OR enable_monthly_rank = 1").
+		Updates(map[string]any{"enable_yesterday_rank": false, "enable_monthly_rank": false}).Error; err != nil {
+		log.Panicf("停用已移除排行榜功能失败: %v", err)
 	}
 	for _, setting := range defaults {
 		if err := client.MySQL.FirstOrCreate(&setting, entity.FeatureSetting{Feature: setting.Feature}).Error; err != nil {
@@ -123,6 +166,28 @@ func InitConfig() {
 	vp.AddConfigPath(".")      // 设置配置文件路径
 	vp.SetConfigName("config") // 设置配置文件名
 	vp.SetConfigType("yaml")   // 设置配置文件类型
+	// Docker 和桥接器由 Go 编排层依据 .env 启动。这些连接参数必须与
+	// compose/bridge 实际端口保持一致；网页可编辑的业务配置仍以
+	// config.yaml 为准，不会被 .env 默认值覆盖。
+	environmentBindings := map[string]string{
+		"system.domain":  "SYSTEM_DOMAIN",
+		"wechat.host":    "WECHAT_HOST",
+		"mysql.host":     "MYSQL_HOST",
+		"mysql.port":     "MYSQL_PORT",
+		"mysql.user":     "MYSQL_USER",
+		"mysql.password": "MYSQL_PASSWORD",
+		"mysql.db":       "MYSQL_DATABASE",
+		"redis.enable":   "REDIS_ENABLE",
+		"redis.host":     "REDIS_HOST",
+		"redis.port":     "REDIS_PORT",
+		"redis.password": "REDIS_PASSWORD",
+		"redis.db":       "REDIS_DB",
+	}
+	for key, environmentName := range environmentBindings {
+		if err := vp.BindEnv(key, environmentName); err != nil {
+			log.Panicf("绑定环境变量 %s 失败: %v", environmentName, err)
+		}
+	}
 	// 读取配置文件
 	if err := vp.ReadInConfig(); err != nil {
 		log.Panicf("读取配置文件失败: %v", err)

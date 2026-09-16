@@ -16,14 +16,16 @@ type updateFeatureTimeParam struct {
 func GetFeatureSettings(ctx *gin.Context) {
 	newsSetting, newsErr := service.GetFeatureSetting(service.FeatureNews)
 	weeklySetting, weeklyErr := service.GetFeatureSetting(service.FeatureWeekly)
+	yearlySetting, yearlyErr := service.GetFeatureSetting(service.FeatureYearly)
 	dormantSetting, dormantErr := service.GetFeatureSetting(service.FeatureDormant)
-	if newsErr != nil || weeklyErr != nil || dormantErr != nil {
+	if newsErr != nil || weeklyErr != nil || yearlyErr != nil || dormantErr != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "读取功能设置失败"})
 		return
 	}
 	ctx.JSON(http.StatusOK, gin.H{
 		"news":    newsSetting,
 		"weekly":  weeklySetting,
+		"yearly":  yearlySetting,
 		"dormant": dormantSetting,
 	})
 }

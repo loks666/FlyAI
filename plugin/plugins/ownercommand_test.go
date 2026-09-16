@@ -7,17 +7,13 @@ import (
 )
 
 func TestRunOwnerCommandDoesNotRequireScheduledFeatureSwitches(t *testing.T) {
-	originalYesterday := sendYesterdayByOwner
 	originalWeekly := sendWeeklyByOwner
-	originalMonthly := sendMonthlyByOwner
 	originalYearly := sendYearlyByOwner
 	originalDormant := sendDormantByOwner
 	originalNews := sendNewsByOwner
 	originalAttack := sendAttackByOwner
 	defer func() {
-		sendYesterdayByOwner = originalYesterday
 		sendWeeklyByOwner = originalWeekly
-		sendMonthlyByOwner = originalMonthly
 		sendYearlyByOwner = originalYearly
 		sendDormantByOwner = originalDormant
 		sendNewsByOwner = originalNews
@@ -25,16 +21,8 @@ func TestRunOwnerCommandDoesNotRequireScheduledFeatureSwitches(t *testing.T) {
 	}()
 
 	called := make(map[string]string)
-	sendYesterdayByOwner = func(groupId string) (string, error) {
-		called[service.OwnerCommandYesterday] = groupId
-		return "", nil
-	}
 	sendWeeklyByOwner = func(groupId string) (string, error) {
 		called[service.OwnerCommandWeekly] = groupId
-		return "", nil
-	}
-	sendMonthlyByOwner = func(groupId string) (string, error) {
-		called[service.OwnerCommandMonthly] = groupId
 		return "", nil
 	}
 	sendYearlyByOwner = func(groupId string) (string, error) {
@@ -57,9 +45,7 @@ func TestRunOwnerCommandDoesNotRequireScheduledFeatureSwitches(t *testing.T) {
 	tests := []struct {
 		command string
 	}{
-		{service.OwnerCommandYesterday},
 		{service.OwnerCommandWeekly},
-		{service.OwnerCommandMonthly},
 		{service.OwnerCommandYearly},
 		{service.OwnerCommandDormant},
 		{service.OwnerCommandNews},

@@ -8,7 +8,6 @@ import (
 	"github.com/loks666/FlyAI/tasks/friends"
 	"github.com/loks666/FlyAI/tasks/hottop"
 	"github.com/loks666/FlyAI/tasks/summary"
-	"github.com/loks666/FlyAI/tasks/watergroup"
 	"log"
 	"time"
 )
@@ -23,20 +22,6 @@ func InitTasks() {
 	}
 	// 定时任务发送消息
 	s := gocron.NewScheduler(time.Local)
-
-	// 水群排行
-	if config.Conf.Task.WaterGroup.Enable {
-		log.Printf("水群排行任务已启用，执行表达式: %+v", config.Conf.Task.WaterGroup.Cron)
-		if config.Conf.Task.WaterGroup.Cron.Yesterday != "" {
-			_, _ = s.Cron(config.Conf.Task.WaterGroup.Cron.Yesterday).Do(watergroup.Yesterday)
-		}
-		if config.Conf.Task.WaterGroup.Cron.Month != "" {
-			_, _ = s.Cron(config.Conf.Task.WaterGroup.Cron.Month).Do(watergroup.Month)
-		}
-		if config.Conf.Task.WaterGroup.Cron.Year != "" {
-			_, _ = s.Cron(config.Conf.Task.WaterGroup.Cron.Year).Do(watergroup.Year)
-		}
-	}
 
 	// 群聊总结
 	if config.Conf.Task.GroupSummary.Enable {

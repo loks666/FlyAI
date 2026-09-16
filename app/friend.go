@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 	"log"
 	"net/http"
+	"strings"
 )
 
 // changeStatusParam
@@ -15,6 +16,46 @@ import (
 type changeStatusParam struct {
 	WxId   string `json:"wxId" binding:"required"`
 	UserId string `json:"userId"`
+}
+
+type changeGroupFeatureParam struct {
+	WxId    string `json:"wxId" binding:"required"`
+	Feature string `json:"feature" binding:"required"`
+}
+
+// ChangeGroupFeatureStatus toggles one automatic push for one group.
+func ChangeGroupFeatureStatus(ctx *gin.Context) {
+	var p changeGroupFeatureParam
+	if err := ctx.ShouldBindJSON(&p); err != nil || !strings.HasSuffix(p.WxId, "@chatroom") {
+		ctx.JSON(http.StatusBadRequest, gin.H{"message": "群聊或功能参数错误"})
+		return
+	}
+	var record entity.Friend
+	if err := client.MySQL.Where("wxid = ?", p.WxId).First(&record).Error; err != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"message": "群聊不存在"})
+		return
+	}
+	columns := map[string]struct {
+		name    string
+		enabled bool
+	}{
+		"weekly":  {name: "enable_weekly_rank", enabled: record.EnableWeeklyRank},
+		"news":    {name: "enable_news", enabled: record.EnableNews},
+		"dormant": {name: "enable_dormant", enabled: record.EnableDormant},
+	}
+	column, ok := columns[p.Feature]
+	if !ok {
+		ctx.JSON(http.StatusBadRequest, gin.H{"message": "未知群聊推送功能"})
+		return
+	}
+	enabled := !column.enabled
+	if err := client.MySQL.Model(&entity.Friend{}).
+		Where("wxid = ?", p.WxId).
+		Update(column.name, enabled).Error; err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "修改群聊推送状态失败"})
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"feature": p.Feature, "enabled": enabled})
 }
 
 // changeUseAiModelParam
@@ -147,15 +188,24 @@ func ChangeUseAiAssistant(ctx *gin.Context) {
 // @param ctx
 func ChangeEnableGroupRankStatus(ctx *gin.Context) {
 	var p changeStatusParam
-	if err := ctx.ShouldBindJSON(&p); err != nil {
+	if err := ctx.ShouldBindJSON(&p); err != nil || !strings.HasSuffix(p.WxId, "@chatroom") {
 		ctx.String(http.StatusBadRequest, "参数错误")
 		return
 	}
 	log.Printf("待修改的群Id：%s", p.WxId)
 
+	var record entity.Friend
+	if err := client.MySQL.Where("wxid = ?", p.WxId).First(&record).Error; err != nil {
+		ctx.String(http.StatusNotFound, "群聊不存在")
+		return
+	}
+	enabled := !record.EnableWeeklyRank
 	err := client.MySQL.Model(&entity.Friend{}).
 		Where("wxid = ?", p.WxId).
-		Update("`enable_chat_rank`", gorm.Expr(" !`enable_chat_rank`")).Error
+		Updates(map[string]any{
+			"enable_chat_rank":   enabled,
+			"enable_weekly_rank": enabled,
+		}).Error
 	if err != nil {
 		log.Printf("修改开启水群排行榜失败：%s", err)
 		ctx.String(http.StatusInternalServerError, "操作失败: %s", err)

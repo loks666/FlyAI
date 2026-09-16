@@ -7,27 +7,29 @@ import (
 // FriendItem
 // @description: 好友列表数据
 type FriendItem struct {
-	CustomAccount  string         // 微信号
-	Nickname       string         // 昵称
-	Pinyin         string         // 昵称拼音大写首字母
-	PinyinAll      string         // 昵称全拼
-	Wxid           string         // 微信原始Id
-	LastActive     types.DateTime // 最后活跃时间
-	EnableMonitor  bool           // 是否监控群消息
-	EnableAi       bool           // 是否使用AI
-	AiModel        string         // AI模型
-	Prompt         string         // AI助手或者自定义提示词
-	EnableChatRank bool           // 是否使用聊天排行
-	EnableWelcome  bool           // 是否使用迎新
-	EnableCommand  bool           // 是否启用指令
-	EnableSummary  bool           // 是否启用总结
-	EnableNews     bool           // 是否启用新闻
-	EnableDormant  bool           // 是否启用潜水成员统计
-	EnableHotTop   bool           // 是否启用热搜
-	ClearMember    int            // 清理成员配置（多少天未活跃的）
-	IsOk           bool           // 是否还在通讯库(群聊是要还在群里也算)
-	AiFreeLimit    int            // AI免费次数
-	AiUsedToday    int            // 今日已使用的AI次数
+	CustomAccount    string         // 微信号
+	Nickname         string         // 昵称
+	Pinyin           string         // 昵称拼音大写首字母
+	PinyinAll        string         // 昵称全拼
+	Wxid             string         // 微信原始Id
+	LastActive       types.DateTime // 最后活跃时间
+	EnableMonitor    bool           // 是否监控群消息
+	EnableAi         bool           // 是否使用AI
+	AiModel          string         // AI模型
+	Prompt           string         // AI助手或者自定义提示词
+	EnableChatRank   bool           // 是否使用聊天排行
+	EnableWeeklyRank bool           // 是否推送周排行
+	EnableYearlyRank bool           // 是否推送年排行
+	EnableWelcome    bool           // 是否使用迎新
+	EnableCommand    bool           // 是否启用指令
+	EnableSummary    bool           // 是否启用总结
+	EnableNews       bool           // 是否启用新闻
+	EnableDormant    bool           // 是否启用潜水成员统计
+	EnableHotTop     bool           // 是否启用热搜
+	ClearMember      int            // 清理成员配置（多少天未活跃的）
+	IsOk             bool           // 是否还在通讯库(群聊是要还在群里也算)
+	AiFreeLimit      int            // AI免费次数
+	AiUsedToday      int            // 今日已使用的AI次数
 }
 
 // GroupUserItem

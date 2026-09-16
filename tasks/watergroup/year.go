@@ -13,7 +13,7 @@ import (
 // Year
 // @description: 年排行榜
 func Year() {
-	groups, err := service.GetAllEnableChatRank()
+	groups, err := service.GetAllEnableYearlyRank()
 	if err != nil {
 		log.Printf("获取启用了聊天排行榜的群组失败, 错误信息: %v", err)
 		return

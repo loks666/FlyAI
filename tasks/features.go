@@ -17,6 +17,7 @@ func RunTimedFeatures() {
 	}{
 		{key: service.FeatureNews, run: news.DailyNews},
 		{key: service.FeatureWeekly, run: watergroup.Week},
+		{key: service.FeatureYearly, run: watergroup.Year},
 		{key: service.FeatureDormant, run: dormant.Weekly},
 	}
 	for _, feature := range features {

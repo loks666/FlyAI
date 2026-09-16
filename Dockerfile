@@ -13,7 +13,7 @@ FROM alpine:3.20 AS runner
 LABEL org.opencontainers.image.source="https://github.com/loks666/FlyAI"
 
 EXPOSE 19099
-EXPOSE 9527
+EXPOSE 9528
 
 WORKDIR /app
 COPY --from=builder /builder/flyai ./flyai

@@ -65,8 +65,8 @@ func RunWeeklyRank(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "读取群配置失败"})
 		return
 	}
-	if !group.IsOk || !group.EnableMonitor || !group.EnableChatRank {
-		ctx.JSON(http.StatusConflict, gin.H{"message": "请先开启该群的监控和每周排行榜"})
+	if !group.IsOk || !group.EnableMonitor || !group.EnableWeeklyRank {
+		ctx.JSON(http.StatusConflict, gin.H{"message": "请先开启该群的监控和排行榜"})
 		return
 	}
 
@@ -122,7 +122,7 @@ func RunAllWeeklyRanks(ctx *gin.Context) {
 		return
 	}
 
-	groups, err := service.GetAllEnableChatRank()
+	groups, err := service.GetAllEnableWeeklyRank()
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "读取群配置失败"})
 		return

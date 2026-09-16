@@ -3,9 +3,13 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/loks666/FlyAI/client"
+	"github.com/loks666/FlyAI/common/applog"
 	"github.com/loks666/FlyAI/model/entity"
+	"gorm.io/gorm"
+	gormLogger "gorm.io/gorm/logger"
 	"log"
 	"time"
 )
@@ -37,8 +41,14 @@ func getContact(wxid string) (entity.Friend, error) {
 	if client.MySQL == nil {
 		return contact, fmt.Errorf("MySQL 未初始化")
 	}
-	if err := client.MySQL.Where("wxid = ?", wxid).Take(&contact).Error; err != nil {
-		return contact, err
+	query := client.MySQL.Session(&gorm.Session{Logger: gormLogger.Discard}).Where("wxid = ?", wxid).Take(&contact)
+	if errors.Is(query.Error, gorm.ErrRecordNotFound) {
+		applog.ContactCachePrintf("record_not_found table=t_friend wxid=%q", wxid)
+		return contact, query.Error
+	}
+	if query.Error != nil {
+		log.Printf("查询联系人失败[wxid=%s]: %v", wxid, query.Error)
+		return contact, query.Error
 	}
 	setContactCacheValue(contactCacheKey(wxid), contact)
 	return contact, nil
@@ -55,8 +65,14 @@ func getGroupMember(groupId, wxid string) (entity.GroupUser, error) {
 	if client.MySQL == nil {
 		return member, fmt.Errorf("MySQL 未初始化")
 	}
-	if err := client.MySQL.Where("group_id = ? AND wxid = ?", groupId, wxid).Take(&member).Error; err != nil {
-		return member, err
+	query := client.MySQL.Session(&gorm.Session{Logger: gormLogger.Discard}).Where("group_id = ? AND wxid = ?", groupId, wxid).Take(&member)
+	if errors.Is(query.Error, gorm.ErrRecordNotFound) {
+		applog.ContactCachePrintf("record_not_found table=t_group_user group_id=%q wxid=%q", groupId, wxid)
+		return member, query.Error
+	}
+	if query.Error != nil {
+		log.Printf("查询群成员失败[group=%s wxid=%s]: %v", groupId, wxid, query.Error)
+		return member, query.Error
 	}
 	setContactCacheValue(groupMemberCacheKey(groupId, wxid), member)
 	return member, nil

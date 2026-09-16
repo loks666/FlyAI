@@ -8,28 +8,30 @@ import (
 // Friend
 // @description: 好友列表
 type Friend struct {
-	Wxid           string         `json:"wxid"`                                                     // 微信原始Id
-	CustomAccount  string         `json:"customAccount"`                                            // 微信号
-	Nickname       string         `json:"nickname"`                                                 // 昵称
-	Pinyin         string         `json:"pinyin"`                                                   // 昵称拼音大写首字母
-	PinyinAll      string         `json:"pinyinAll"`                                                // 昵称全拼
-	LastActive     types.DateTime `json:"lastActive"`                                               // 最后活跃时间
-	EnableMonitor  bool           `json:"enableMonitor" gorm:"type:tinyint(1) default 0 not null"`  // 是否监控群消息
-	EnableAi       bool           `json:"enableAI" gorm:"type:tinyint(1) default 0 not null"`       // 是否使用AI
-	AiModel        string         `json:"aiModel"`                                                  // AI模型
-	Prompt         string         `json:"prompt"`                                                   // 提示词
-	EnableChatRank bool           `json:"enableChatRank" gorm:"type:tinyint(1) default 0 not null"` // 是否使用聊天排行
-	EnableWelcome  bool           `json:"enableWelcome" gorm:"type:tinyint(1) default 0 not null"`  // 是否启用迎新
-	EnableSummary  bool           `json:"enableSummary" gorm:"type:tinyint(1) default 0 not null"`  // 是否启用总结
-	EnableNews     bool           `json:"enableNews" gorm:"type:tinyint(1) default 0 not null"`     // 是否启用新闻
-	EnableDormant  bool           `json:"enableDormant" gorm:"type:tinyint(1) default 0 not null"`  // 是否启用潜水成员统计
-	EnableHotTop   bool           `json:"enableHotTop" gorm:"type:tinyint(1) default 0 not null"`   // 是否启用热榜新闻
-	ClearMember    int            `json:"clearMember"`                                              // 清理成员配置（多少天未活跃的）
-	IsOk           bool           `json:"isOk" gorm:"type:tinyint(1) default 0 not null"`           // 是否正常
-	UsedTokens     int            `json:"usedTokens"`                                               // 已使用的AI Token数量
-	AiFreeLimit    int            `json:"aiFreeLimit"`                                              // AI免费次数
-	AiUsedToday    int            `json:"aiUsedToday"`                                              // 今日已使用的AI次数
-	EnableCommand  bool           `json:"enableCommand" gorm:"type:tinyint(1) default 0 not null"`  // 是否允许私聊指令
+	Wxid             string         `json:"wxid"`                                                       // 微信原始Id
+	CustomAccount    string         `json:"customAccount"`                                              // 微信号
+	Nickname         string         `json:"nickname"`                                                   // 昵称
+	Pinyin           string         `json:"pinyin"`                                                     // 昵称拼音大写首字母
+	PinyinAll        string         `json:"pinyinAll"`                                                  // 昵称全拼
+	LastActive       types.DateTime `json:"lastActive"`                                                 // 最后活跃时间
+	EnableMonitor    bool           `json:"enableMonitor" gorm:"type:tinyint(1) default 0 not null"`    // 是否监控群消息
+	EnableAi         bool           `json:"enableAI" gorm:"type:tinyint(1) default 0 not null"`         // 是否使用AI
+	AiModel          string         `json:"aiModel"`                                                    // AI模型
+	Prompt           string         `json:"prompt"`                                                     // 提示词
+	EnableChatRank   bool           `json:"enableChatRank" gorm:"type:tinyint(1) default 0 not null"`   // 是否使用聊天排行
+	EnableWeeklyRank bool           `json:"enableWeeklyRank" gorm:"type:tinyint(1) default 0 not null"` // 是否推送周排行
+	EnableYearlyRank bool           `json:"enableYearlyRank" gorm:"type:tinyint(1) default 0 not null"` // 是否推送年排行
+	EnableWelcome    bool           `json:"enableWelcome" gorm:"type:tinyint(1) default 0 not null"`    // 是否启用迎新
+	EnableSummary    bool           `json:"enableSummary" gorm:"type:tinyint(1) default 0 not null"`    // 是否启用总结
+	EnableNews       bool           `json:"enableNews" gorm:"type:tinyint(1) default 0 not null"`       // 是否启用新闻
+	EnableDormant    bool           `json:"enableDormant" gorm:"type:tinyint(1) default 0 not null"`    // 是否启用潜水成员统计
+	EnableHotTop     bool           `json:"enableHotTop" gorm:"type:tinyint(1) default 0 not null"`     // 是否启用热榜新闻
+	ClearMember      int            `json:"clearMember"`                                                // 清理成员配置（多少天未活跃的）
+	IsOk             bool           `json:"isOk" gorm:"type:tinyint(1) default 0 not null"`             // 是否正常
+	UsedTokens       int            `json:"usedTokens"`                                                 // 已使用的AI Token数量
+	AiFreeLimit      int            `json:"aiFreeLimit"`                                                // AI免费次数
+	AiUsedToday      int            `json:"aiUsedToday"`                                                // 今日已使用的AI次数
+	EnableCommand    bool           `json:"enableCommand" gorm:"type:tinyint(1) default 0 not null"`    // 是否允许私聊指令
 }
 
 func (Friend) TableName() string {

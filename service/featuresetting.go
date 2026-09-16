@@ -10,6 +10,7 @@ import (
 const (
 	FeatureNews    = "news"
 	FeatureWeekly  = "weekly"
+	FeatureYearly  = "yearly"
 	FeatureDormant = "dormant"
 
 	ScheduleDaily     = "daily"
@@ -20,6 +21,8 @@ const (
 	ScheduleFriday    = "friday"
 	ScheduleSaturday  = "saturday"
 	ScheduleSunday    = "sunday"
+	ScheduleMonthly   = "monthly"
+	ScheduleYearly    = "yearly"
 )
 
 type featureDefault struct {
@@ -31,6 +34,7 @@ type featureDefault struct {
 var featureDefaults = map[string]featureDefault{
 	FeatureNews:    {SendTime: "08:00", Schedule: ScheduleDaily},
 	FeatureWeekly:  {SendTime: "09:30", Schedule: ScheduleMonday},
+	FeatureYearly:  {SendTime: "00:00", Schedule: ScheduleYearly},
 	FeatureDormant: {SendTime: "09:00", Schedule: ScheduleMonday, MessageThreshold: 1},
 }
 
@@ -53,6 +57,8 @@ var scheduleLabels = map[string]string{
 	ScheduleFriday:    "每周五",
 	ScheduleSaturday:  "每周六",
 	ScheduleSunday:    "每周日",
+	ScheduleMonthly:   "每月 1 日",
+	ScheduleYearly:    "每年 1 月 1 日",
 }
 
 func ValidateFeatureTime(value string) error {
@@ -64,11 +70,11 @@ func ValidateFeatureTime(value string) error {
 }
 
 func ValidateFeatureSchedule(value string) error {
-	if value == ScheduleDaily {
+	if value == ScheduleDaily || value == ScheduleMonthly || value == ScheduleYearly {
 		return nil
 	}
 	if _, ok := scheduleWeekdays[value]; !ok {
-		return errors.New("推送周期必须为每天或每周一至周日")
+		return errors.New("推送周期必须为每天、每周一至周日、每月或每年")
 	}
 	return nil
 }
@@ -81,8 +87,13 @@ func FeatureScheduleLabel(schedule string) string {
 }
 
 func FeatureScheduleMatches(schedule string, now time.Time) bool {
-	if schedule == ScheduleDaily {
+	switch schedule {
+	case ScheduleDaily:
 		return true
+	case ScheduleMonthly:
+		return now.Day() == 1
+	case ScheduleYearly:
+		return now.Month() == time.January && now.Day() == 1
 	}
 	weekday, ok := scheduleWeekdays[schedule]
 	return ok && now.Weekday() == weekday
@@ -94,10 +105,16 @@ func GetFeatureSetting(feature string) (entity.FeatureSetting, error) {
 		return entity.FeatureSetting{}, errors.New("未知功能")
 	}
 	setting := entity.FeatureSetting{Feature: feature, SendTime: defaults.SendTime, Schedule: defaults.Schedule, MessageThreshold: defaults.MessageThreshold}
-	err := client.MySQL.FirstOrCreate(&setting, entity.FeatureSetting{Feature: feature}).Error
+	result := client.MySQL.FirstOrCreate(&setting, entity.FeatureSetting{Feature: feature})
+	err := result.Error
 	if err == nil && setting.Schedule == "" {
 		setting.Schedule = defaults.Schedule
 		err = client.MySQL.Model(&setting).Update("schedule", setting.Schedule).Error
+	}
+	if err == nil && feature == FeatureYearly && (setting.Schedule != ScheduleYearly || setting.SendTime != "00:00") {
+		setting.Schedule = ScheduleYearly
+		setting.SendTime = "00:00"
+		err = client.MySQL.Model(&setting).Updates(map[string]any{"schedule": setting.Schedule, "send_time": setting.SendTime}).Error
 	}
 	if err == nil && feature == FeatureDormant && setting.MessageThreshold < 1 {
 		setting.MessageThreshold = defaults.MessageThreshold
@@ -109,6 +126,9 @@ func GetFeatureSetting(feature string) (entity.FeatureSetting, error) {
 func UpdateFeatureSetting(feature, schedule, sendTime string, messageThreshold *int) (entity.FeatureSetting, error) {
 	if _, ok := featureDefaults[feature]; !ok {
 		return entity.FeatureSetting{}, errors.New("未知功能")
+	}
+	if feature == FeatureYearly {
+		return entity.FeatureSetting{}, errors.New("年排行榜固定于每年 1 月 1 日 00:00 推送，无需修改")
 	}
 	if err := ValidateFeatureTime(sendTime); err != nil {
 		return entity.FeatureSetting{}, err

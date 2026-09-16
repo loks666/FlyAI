@@ -36,6 +36,10 @@ CREATE TABLE IF NOT EXISTS `t_friend` (
   `ai_model` longtext,
   `prompt` longtext,
   `enable_chat_rank` tinyint(1) NOT NULL DEFAULT '0',
+  `enable_yesterday_rank` tinyint(1) NOT NULL DEFAULT '0',
+  `enable_weekly_rank` tinyint(1) NOT NULL DEFAULT '0',
+  `enable_monthly_rank` tinyint(1) NOT NULL DEFAULT '0',
+  `enable_yearly_rank` tinyint(1) NOT NULL DEFAULT '0',
   `enable_welcome` tinyint(1) NOT NULL DEFAULT '0',
   `enable_summary` tinyint(1) NOT NULL DEFAULT '0',
   `enable_news` tinyint(1) NOT NULL DEFAULT '0',
@@ -105,6 +109,19 @@ CREATE TABLE IF NOT EXISTS `t_owner` (
   UNIQUE KEY `idx_t_owner_wechat_account` (`wechat_account`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+CREATE TABLE IF NOT EXISTS `t_bridge_setting` (
+  `id` bigint unsigned NOT NULL,
+  `wechat_account` varchar(128) NOT NULL DEFAULT '',
+  `resolved_wxid` varchar(128) NOT NULL DEFAULT '',
+  `account_directory` varchar(1024) NOT NULL DEFAULT '',
+  `updated_at` datetime(3) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+INSERT INTO `t_bridge_setting` (`id`, `wechat_account`, `resolved_wxid`, `account_directory`, `updated_at`)
+VALUES (1, '', '', '', CURRENT_TIMESTAMP(3))
+ON DUPLICATE KEY UPDATE `id` = VALUES(`id`);
+
 CREATE TABLE IF NOT EXISTS `t_plugin_data` (
   `user_id` longtext,
   `plugin_code` longtext,
@@ -116,5 +133,6 @@ INSERT INTO `t_feature_setting`
 VALUES
   ('news', '08:00', 'daily', 0, '', CURRENT_TIMESTAMP(3)),
   ('weekly', '09:30', 'monday', 0, '', CURRENT_TIMESTAMP(3)),
+  ('yearly', '00:00', 'yearly', 0, '', CURRENT_TIMESTAMP(3)),
   ('dormant', '09:00', 'monday', 1, '', CURRENT_TIMESTAMP(3))
 ON DUPLICATE KEY UPDATE `feature` = VALUES(`feature`);

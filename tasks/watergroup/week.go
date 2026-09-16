@@ -16,7 +16,7 @@ var ErrNoWeekMessages = errors.New("最近7天没有可排行的消息")
 // Week
 // @description: 周排行榜
 func Week() {
-	groups, err := service.GetAllEnableChatRank()
+	groups, err := service.GetAllEnableWeeklyRank()
 	if err != nil {
 		log.Printf("获取启用了聊天排行榜的群组失败, 错误信息: %v", err)
 		return
@@ -50,7 +50,7 @@ func BuildWeekRank(gid string) (string, error) {
 	// from the signed-in WeChat client before calculating the denominator.
 	service.SyncGroupMembers(gid)
 
-	// 获取从生成时刻向前滚动7天的消息总数
+	// 获取从生成时刻向前滚动 7 天的消息总数。
 	records, err := getRankData(gid, "week", referenceTime)
 	if err != nil {
 		return "", fmt.Errorf("获取最近7天消息排行失败: %w", err)

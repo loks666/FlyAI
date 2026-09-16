@@ -15,19 +15,17 @@ import (
 var ownerCommandRunning sync.Map
 
 var (
-	sendYesterdayByOwner = watergroup.SendYesterdayToGroup
-	sendWeeklyByOwner    = watergroup.SendWeekToGroup
-	sendMonthlyByOwner   = watergroup.SendMonthToGroup
-	sendYearlyByOwner    = watergroup.SendYearToGroup
-	sendDormantByOwner   = dormant.SendReportToGroup
-	sendNewsByOwner      = news.SendMorningPostToGroup
-	sendAttackByOwner    = sendRandomAttackReplies
+	sendWeeklyByOwner  = watergroup.SendWeekToGroup
+	sendYearlyByOwner  = watergroup.SendYearToGroup
+	sendDormantByOwner = dormant.SendReportToGroup
+	sendNewsByOwner    = news.SendMorningPostToGroup
+	sendAttackByOwner  = sendRandomAttackReplies
 )
 
 // OwnerCommand runs the three fixed group functions for a bound owner.
 func OwnerCommand(ctx *plugin.MessageContext) {
 	ctx.Abort()
-	if !service.IsOwnerWxid(ctx.GroupUser) {
+	if !service.IsOwnerWechatAccount(ctx.SenderWechatAccount) {
 		return
 	}
 	robotName := current.GetRobotInfo().Name
@@ -44,7 +42,7 @@ func OwnerCommand(ctx *plugin.MessageContext) {
 		command, ok = service.ParseOwnerCommand(ctx.Content, robotName)
 		if !ok {
 			_ = utils.SendMessage(ctx.FromUser, ctx.GroupUser,
-				fmt.Sprintf("未识别命令：%s\n可用命令：/昨排、/周排、/月排、/年排、/排行榜、/潜水、/热点、给我骂他@目标昵称", commandText), 0)
+				fmt.Sprintf("未识别命令：%s\n可用命令：排行榜、周排、年排、潜水、热点、给我骂他@目标昵称（前五项兼容 / 前缀）", commandText), 0)
 			return
 		}
 	}
@@ -70,14 +68,8 @@ func OwnerCommand(ctx *plugin.MessageContext) {
 
 func runOwnerCommand(groupId string, targetNames []string, attackMode service.OwnerAttackMode, command string) error {
 	switch command {
-	case service.OwnerCommandYesterday:
-		_, err := sendYesterdayByOwner(groupId)
-		return err
 	case service.OwnerCommandWeekly:
 		_, err := sendWeeklyByOwner(groupId)
-		return err
-	case service.OwnerCommandMonthly:
-		_, err := sendMonthlyByOwner(groupId)
 		return err
 	case service.OwnerCommandYearly:
 		_, err := sendYearlyByOwner(groupId)

@@ -38,9 +38,10 @@ func Plugin() {
 		return isOwnerCommandMessage(m)
 	}, plugins.OwnerCommand)
 
-	// 非管理员在群里 @机器人时，执行按发送者 wxid 隔离的回复状态机。
+	// 非管理员在群里 @机器人或尝试主人命令时，执行同一套按发送者
+	// wxid 隔离的回复状态机。
 	dispatcher.RegisterHandler(func(m *dto.Message) bool {
-		return isNonOwnerMentionMessage(m)
+		return isNonOwnerReplyMessage(m)
 	}, plugins.AttackReply)
 
 	// 普通指令只允许私聊；群聊仅开放绑定主人的三个固定命令。
@@ -76,7 +77,7 @@ func Plugin() {
 		// 主人手动指令与群的定时监控开关彻底分离：即使群未开启
 		// 监控，绑定主人仍可以在群里 @机器人执行固定命令。
 		if message.IsGroup() && !service.IsGroupMonitorEnabled(message.FromUser) {
-			if !isOwnerCommandMessage(message) && !isNonOwnerMentionMessage(message) {
+			if !isOwnerCommandMessage(message) && !isNonOwnerReplyMessage(message) {
 				// Keep the history complete for on-demand owner reports, but do not
 				// run any automatic response plugin for a disabled group.
 				return
@@ -87,16 +88,27 @@ func Plugin() {
 }
 
 func isOwnerCommandMessage(m *dto.Message) bool {
-	return m.IsGroup() && m.Type == types.MsgTypeText && service.IsOwnerWxid(m.GroupUser) && ownerCommandMatches(m)
+	return m.IsGroup() &&
+		m.Type == types.MsgTypeText &&
+		service.IsOwnerWechatAccount(m.SenderWechatAccount) &&
+		ownerCommandMatches(m)
 }
 
-func isNonOwnerMentionMessage(m *dto.Message) bool {
+func isNonOwnerReplyMessage(m *dto.Message) bool {
 	robot := current.GetRobotInfo()
 	return m.IsGroup() &&
 		m.Type == types.MsgTypeText &&
 		m.GroupUser != robot.WxId &&
-		!service.IsOwnerWxid(m.GroupUser) &&
-		service.IsRobotMention(m.Content, robot.Name)
+		!service.IsOwnerWechatAccount(m.SenderWechatAccount) &&
+		(service.IsRobotMention(m.Content, robot.Name) || nonOwnerCommandMatches(m.Content, robot.Name))
+}
+
+func nonOwnerCommandMatches(content, robotName string) bool {
+	if _, ok := service.ParseOwnerCommand(content, robotName); ok {
+		return true
+	}
+	_, _, ok := service.ParseOwnerAttackTargets(content, robotName)
+	return ok
 }
 
 func ownerCommandMatches(m *dto.Message) bool {

@@ -89,12 +89,30 @@ func GetAllEnableAI() (records []entity.Friend, err error) {
 // @return records
 // @return err
 func GetAllEnableChatRank() (records []entity.Friend, err error) {
-	err = client.MySQL.Where("enable_chat_rank = ?", 1).
+	return GetAllEnableWeeklyRank()
+}
+
+func getAllEnableRank(column string) (records []entity.Friend, err error) {
+	err = client.MySQL.Where(column+" = ?", 1).
 		Where("enable_monitor = ?", 1).
 		Where("is_ok IS TRUE").
 		Where("wxid LIKE '%@chatroom'").
 		Find(&records).Error
 	return
+}
+
+func GetAllEnableWeeklyRank() ([]entity.Friend, error) {
+	return getAllEnableRank("enable_weekly_rank")
+}
+
+func GetAllEnableYearlyRank() ([]entity.Friend, error) {
+	var records []entity.Friend
+	err := client.MySQL.
+		Where("enable_monitor = ?", 1).
+		Where("is_ok IS TRUE").
+		Where("wxid LIKE '%@chatroom'").
+		Find(&records).Error
+	return records, err
 }
 
 // GetAllEnableSummary

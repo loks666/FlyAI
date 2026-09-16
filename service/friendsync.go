@@ -1,6 +1,8 @@
 package service
 
 import (
+	"errors"
+	"github.com/go-resty/resty/v2"
 	"github.com/loks666/FlyAI/client"
 	"github.com/loks666/FlyAI/common/applog"
 	"github.com/loks666/FlyAI/common/types"
@@ -11,6 +13,11 @@ import (
 	"strings"
 	"time"
 )
+
+// ErrBridgeNotRunning 表示微信桥接器没有在 WECHAT_HOST 上提供服务，或者已启动但还没有
+// 完成账号与窗口绑定。所有同步都依赖桥接器的 HTTP 接口，提前返回这个错误可以避免调用方
+// 只看到一条 "connectex: No connection could be made" 的裸连接错误。
+var ErrBridgeNotRunning = errors.New("微信桥接器未启动，请在管理页面启动桥接器后重试")
 
 // SyncFriend
 // @description: 同步好友列表
@@ -30,6 +37,9 @@ func SyncFriendCatalog() {
 }
 
 func syncFriend(announce bool) {
+	if !wechatBridgeReady() {
+		return
+	}
 	// 获取好友列表
 	friends, err := utils.GetFriendList()
 	if err != nil {
@@ -112,21 +122,22 @@ func syncFriend(announce bool) {
 		} else {
 			// 新增
 			err = tx.Create(&entity.Friend{
-				CustomAccount:  item.CustomAccount,
-				Nickname:       item.Nickname,
-				Pinyin:         item.Pinyin,
-				PinyinAll:      item.PinyinAll,
-				Wxid:           item.Wxid,
-				IsOk:           true,
-				EnableAi:       config.Conf.System.DefaultRule.Ai,
-				EnableChatRank: config.Conf.System.DefaultRule.ChatRank,
-				EnableSummary:  config.Conf.System.DefaultRule.Summary,
-				EnableWelcome:  config.Conf.System.DefaultRule.Welcome,
-				EnableNews:     config.Conf.System.DefaultRule.News,
-				EnableHotTop:   config.Conf.System.DefaultRule.HotTop,
-				AiFreeLimit:    config.Conf.System.DefaultRule.AiFreeLimit,
-				ClearMember:    0,
-				LastActive:     types.DateTime(time.Now().Local()),
+				CustomAccount:    item.CustomAccount,
+				Nickname:         item.Nickname,
+				Pinyin:           item.Pinyin,
+				PinyinAll:        item.PinyinAll,
+				Wxid:             item.Wxid,
+				IsOk:             true,
+				EnableAi:         config.Conf.System.DefaultRule.Ai,
+				EnableChatRank:   config.Conf.System.DefaultRule.ChatRank,
+				EnableWeeklyRank: config.Conf.System.DefaultRule.ChatRank,
+				EnableSummary:    config.Conf.System.DefaultRule.Summary,
+				EnableWelcome:    config.Conf.System.DefaultRule.Welcome,
+				EnableNews:       config.Conf.System.DefaultRule.News,
+				EnableHotTop:     config.Conf.System.DefaultRule.HotTop,
+				AiFreeLimit:      config.Conf.System.DefaultRule.AiFreeLimit,
+				ClearMember:      0,
+				LastActive:       types.DateTime(time.Now().Local()),
 			}).Error
 			if err != nil {
 				log.Printf("新增好友失败: %s", err.Error())
@@ -192,6 +203,22 @@ func syncFriend(announce bool) {
 	applog.ContactSyncPrintln("同步好友列表完成")
 }
 
+// BridgeReady 供 HTTP 处理器在整段同步开始前判断桥接器是否可用。
+func BridgeReady() bool {
+	return wechatBridgeReady()
+}
+
+func wechatBridgeReady() bool {
+	var health struct {
+		Code int `json:"code"`
+		Data struct {
+			SendReady bool `json:"sendReady"`
+		} `json:"data"`
+	}
+	_, err := resty.New().SetTimeout(2 * time.Second).R().SetResult(&health).Get(config.Conf.Wechat.GetURL("/health"))
+	return err == nil && health.Code == 1 && health.Data.SendReady
+}
+
 // SyncGroupMembers
 // @description: 同步群成员
 // @param wxId
@@ -202,6 +229,10 @@ func SyncGroupMembers(wxId string) error {
 }
 
 func syncGroupMembers(wxId string) (err error) {
+	// 桥接器没起来时直接返回可读错误，不要再去 POST /api/getMemberFromChatRoom。
+	if !wechatBridgeReady() {
+		return ErrBridgeNotRunning
+	}
 	membersIds, memberNicknames, admin, err := utils.GetGroupMembers(wxId)
 	if err != nil {
 		return

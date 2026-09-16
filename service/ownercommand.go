@@ -7,13 +7,11 @@ import (
 )
 
 const (
-	OwnerCommandYesterday = "yesterday"
-	OwnerCommandWeekly    = "weekly"
-	OwnerCommandMonthly   = "monthly"
-	OwnerCommandYearly    = "yearly"
-	OwnerCommandDormant   = "dormant"
-	OwnerCommandNews      = "news"
-	OwnerCommandAttack    = "attack"
+	OwnerCommandWeekly  = "weekly"
+	OwnerCommandYearly  = "yearly"
+	OwnerCommandDormant = "dormant"
+	OwnerCommandNews    = "news"
+	OwnerCommandAttack  = "attack"
 )
 
 type OwnerAttackMode string
@@ -24,25 +22,26 @@ const (
 )
 
 // ParseOwnerCommand accepts one of the fixed owner commands found after an
-// explicit @robot-name prefix. Unicode spaces inserted by WeChat are handled
-// by strings.TrimSpace.
+// explicit @robot-name prefix. The slash is optional, and Unicode spaces
+// inserted by WeChat are handled by strings.TrimSpace.
 func ParseOwnerCommand(content, robotName string) (string, bool) {
 	commandText, ok := ExtractRobotCommand(content, robotName)
 	if !ok {
 		return "", false
 	}
+	return parseOwnerCommandToken(commandText)
+}
+
+func parseOwnerCommandToken(commandText string) (string, bool) {
+	commandText = strings.TrimPrefix(strings.TrimSpace(commandText), "/")
 	switch commandText {
-	case "/昨排":
-		return OwnerCommandYesterday, true
-	case "/排行榜", "/周排":
+	case "排行榜", "周排":
 		return OwnerCommandWeekly, true
-	case "/月排":
-		return OwnerCommandMonthly, true
-	case "/年排":
+	case "年排":
 		return OwnerCommandYearly, true
-	case "/潜水":
+	case "潜水":
 		return OwnerCommandDormant, true
-	case "/热点":
+	case "热点":
 		return OwnerCommandNews, true
 	default:
 		return "", false
@@ -94,19 +93,27 @@ func ParseOwnerAttackTargets(content, robotName string) ([]string, OwnerAttackMo
 }
 
 // ExtractRobotCommand separates mention recognition from command matching.
-// Once the message starts with @robot-name, the first slash-prefixed token in
-// the remaining text is treated as a command candidate.
+// Slash-prefixed candidates retain the legacy behavior of being discoverable
+// later in the message. Without a slash, a supported command must be the first
+// token after the robot mention.
 func ExtractRobotCommand(content, robotName string) (string, bool) {
 	remainder, ok := robotMentionRemainder(content, robotName)
 	if !ok {
 		return "", false
 	}
 	slashIndex := strings.IndexRune(remainder, '/')
-	if slashIndex < 0 {
+	if slashIndex >= 0 {
+		fields := strings.Fields(strings.TrimSpace(remainder[slashIndex:]))
+		if len(fields) == 0 || !strings.HasPrefix(fields[0], "/") {
+			return "", false
+		}
+		return fields[0], true
+	}
+	fields := strings.Fields(remainder)
+	if len(fields) == 0 {
 		return "", false
 	}
-	fields := strings.Fields(strings.TrimSpace(remainder[slashIndex:]))
-	if len(fields) == 0 || !strings.HasPrefix(fields[0], "/") {
+	if _, supported := parseOwnerCommandToken(fields[0]); !supported {
 		return "", false
 	}
 	return fields[0], true

@@ -130,7 +130,7 @@ func logMessage(remoteAddr net.Addr, m *dto.Message, size int) {
 		Remote              string            `json:"remote"`
 		Event               string            `json:"event"`
 	}{
-		Content:             m.Content,
+		Content:             singleLineLogContent(m),
 		SenderNickname:      m.SenderNickname,
 		SenderGroupNickname: m.SenderGroupNickname,
 		SenderWechatAccount: m.SenderWechatAccount,
@@ -149,4 +149,18 @@ func logMessage(remoteAddr net.Addr, m *dto.Message, size int) {
 	} else {
 		log.Print(string(entry))
 	}
+}
+
+func singleLineLogContent(m *dto.Message) string {
+	content := m.Content
+	// A live bridge retry may transiently leave one redundant authoritative
+	// sender envelope in the parsed body. It is already represented by the
+	// groupUser field, so keep it out of the human-facing content field.
+	for _, separator := range []string{":\r\n", ":\n"} {
+		prefix := m.GroupUser + separator
+		for m.GroupUser != "" && strings.HasPrefix(content, prefix) {
+			content = strings.TrimPrefix(content, prefix)
+		}
+	}
+	return strings.NewReplacer("\r\n", " ", "\r", " ", "\n", " ").Replace(content)
 }
