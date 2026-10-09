@@ -57,7 +57,8 @@ func sendMessageNow(toId, atId, msg string, retryCount int) (err error) {
 		Sent   bool   `json:"sent"`
 		Detail string `json:"detail"`
 	}]
-	res := resty.New()
+	// 桥接器通过微信窗口自动化发送，窗口卡住时不设超时会永久占住串行发送队列。
+	res := resty.New().SetTimeout(60 * time.Second)
 	resp, err := res.R().
 		SetHeader("Content-Type", "application/json;chartset=utf-8").
 		SetResult(&result).
